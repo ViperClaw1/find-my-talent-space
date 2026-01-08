@@ -89,26 +89,8 @@ const CreateRequest = () => {
     tiers: [{ id: "1", startTime: "", endTime: "", slots: "1" }],
   });
 
-  const getSteps = () => {
-    if (!requestType) return ["Select Type"];
-    
-    const baseSteps = ["Select Type", "Service Details", "Location Details"];
-    
-    if (requestType === "direct") {
-      return [...baseSteps, "Select Talent", "Review"];
-    }
-    if (requestType === "open") {
-      return [...baseSteps, "Review"];
-    }
-    if (requestType === "time-slot") {
-      return [...baseSteps, "Event Details", "Time Slots", "Review"];
-    }
-    
-    return baseSteps;
-  };
-
-  const steps = getSteps();
-  const maxStep = steps.length;
+  const steps = ["Select Type", "Request Details"];
+  const maxStep = 2;
 
   const handleNext = () => {
     if (step < maxStep) {
@@ -131,9 +113,12 @@ const CreateRequest = () => {
 
   const canProceed = () => {
     if (step === 1) return requestType !== null;
-    if (step === 2) return serviceData.serviceCategory && serviceData.offeredAmount;
-    if (step === 3) return locationData.startDate;
-    if (requestType === "direct" && step === 4) return selectedTalent !== null;
+    if (step === 2) {
+      const hasService = serviceData.serviceCategory && serviceData.offeredAmount;
+      const hasLocation = locationData.startDate;
+      if (requestType === "direct") return hasService && hasLocation && selectedTalent !== null;
+      return hasService && hasLocation;
+    }
     return true;
   };
 
@@ -186,9 +171,20 @@ const CreateRequest = () => {
       );
     }
 
-    if (step === 2) {
-      return (
-        <div className="glass-card rounded-2xl p-6 max-w-3xl mx-auto">
+    // Step 2: All sections combined
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold font-display mb-1 capitalize">
+            {requestType?.replace("-", " ")} Request
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Fill in the details for your request
+          </p>
+        </div>
+
+        {/* Service Details */}
+        <div className="glass-card rounded-2xl p-6">
           <ServiceDetailsSection
             formData={serviceData}
             onChange={(field, value) =>
@@ -197,12 +193,9 @@ const CreateRequest = () => {
             showTalentsNeeded={requestType === "open"}
           />
         </div>
-      );
-    }
 
-    if (step === 3) {
-      return (
-        <div className="glass-card rounded-2xl p-6 max-w-3xl mx-auto">
+        {/* Location Details */}
+        <div className="glass-card rounded-2xl p-6">
           <LocationDetailsSection
             formData={locationData}
             onChange={(field, value) =>
@@ -210,91 +203,41 @@ const CreateRequest = () => {
             }
           />
         </div>
-      );
-    }
 
-    if (requestType === "direct" && step === 4) {
-      return (
-        <div className="glass-card rounded-2xl p-6 max-w-3xl mx-auto">
-          <TalentSearchSection
-            selectedTalent={selectedTalent}
-            onSelectTalent={setSelectedTalent}
-          />
-        </div>
-      );
-    }
+        {/* Event Section - Only for Time-Slot (required) */}
+        {requestType === "time-slot" && (
+          <div className="glass-card rounded-2xl p-6">
+            <EventSection
+              formData={eventData}
+              onChange={(field, value) =>
+                setEventData((prev) => ({ ...prev, [field]: value }))
+              }
+              isRequired
+            />
+          </div>
+        )}
 
-    if (requestType === "time-slot" && step === 4) {
-      return (
-        <div className="glass-card rounded-2xl p-6 max-w-3xl mx-auto">
-          <EventSection
-            formData={eventData}
-            onChange={(field, value) =>
-              setEventData((prev) => ({ ...prev, [field]: value }))
-            }
-            isRequired
-          />
-        </div>
-      );
-    }
+        {/* Time Slot Section - Only for Time-Slot */}
+        {requestType === "time-slot" && (
+          <div className="glass-card rounded-2xl p-6">
+            <TimeSlotSection
+              formData={timeSlotData}
+              onChange={(field, value) =>
+                setTimeSlotData((prev) => ({ ...prev, [field]: value }))
+              }
+            />
+          </div>
+        )}
 
-    if (requestType === "time-slot" && step === 5) {
-      return (
-        <div className="glass-card rounded-2xl p-6 max-w-3xl mx-auto">
-          <TimeSlotSection
-            formData={timeSlotData}
-            onChange={(field, value) =>
-              setTimeSlotData((prev) => ({ ...prev, [field]: value }))
-            }
-          />
-        </div>
-      );
-    }
-
-    // Review step
-    return (
-      <div className="glass-card rounded-2xl p-6 max-w-3xl mx-auto space-y-6">
-        <h3 className="text-lg font-semibold font-display">Review Your Request</h3>
-        
-        <div className="grid gap-4">
-          <div className="p-4 bg-muted/50 rounded-xl">
-            <p className="text-sm text-muted-foreground mb-1">Request Type</p>
-            <p className="font-medium capitalize">{requestType?.replace("-", " ")}</p>
+        {/* Talent Search - Only for Direct */}
+        {requestType === "direct" && (
+          <div className="glass-card rounded-2xl p-6">
+            <TalentSearchSection
+              selectedTalent={selectedTalent}
+              onSelectTalent={setSelectedTalent}
+            />
           </div>
-          
-          <div className="p-4 bg-muted/50 rounded-xl">
-            <p className="text-sm text-muted-foreground mb-1">Service</p>
-            <p className="font-medium">
-              {serviceData.serviceCategory} - {serviceData.serviceType}
-            </p>
-          </div>
-          
-          <div className="p-4 bg-muted/50 rounded-xl">
-            <p className="text-sm text-muted-foreground mb-1">Budget</p>
-            <p className="font-medium">${serviceData.offeredAmount}</p>
-          </div>
-          
-          <div className="p-4 bg-muted/50 rounded-xl">
-            <p className="text-sm text-muted-foreground mb-1">Date</p>
-            <p className="font-medium">
-              {locationData.startDate} {locationData.startTime && `at ${locationData.startTime}`}
-            </p>
-          </div>
-          
-          {requestType === "direct" && selectedTalent && (
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-sm text-muted-foreground mb-1">Selected Talent</p>
-              <p className="font-medium">{selectedTalent.name}</p>
-            </div>
-          )}
-          
-          {requestType === "open" && (
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-sm text-muted-foreground mb-1">Talents Needed</p>
-              <p className="font-medium">{serviceData.talentsNeeded}</p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     );
   };
