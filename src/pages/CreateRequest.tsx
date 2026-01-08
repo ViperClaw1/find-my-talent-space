@@ -183,6 +183,16 @@ const CreateRequest = () => {
           </p>
         </div>
 
+        {/* Talent Search - Only for Direct (first for direct requests) */}
+        {requestType === "direct" && (
+          <div className="glass-card rounded-2xl p-6">
+            <TalentSearchSection
+              selectedTalent={selectedTalent}
+              onSelectTalent={setSelectedTalent}
+            />
+          </div>
+        )}
+
         {/* Service Details */}
         <div className="glass-card rounded-2xl p-6">
           <ServiceDetailsSection
@@ -225,16 +235,6 @@ const CreateRequest = () => {
               onChange={(field, value) =>
                 setTimeSlotData((prev) => ({ ...prev, [field]: value }))
               }
-            />
-          </div>
-        )}
-
-        {/* Talent Search - Only for Direct */}
-        {requestType === "direct" && (
-          <div className="glass-card rounded-2xl p-6">
-            <TalentSearchSection
-              selectedTalent={selectedTalent}
-              onSelectTalent={setSelectedTalent}
             />
           </div>
         )}
