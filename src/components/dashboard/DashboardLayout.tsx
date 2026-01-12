@@ -60,10 +60,10 @@ const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutPr
           {/* Logo */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="text-lg font-bold font-display">Requestfully</span>
+              <span className="text-lg font-semibold text-primary">requestfully</span>
             </Link>
             <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
               <X className="w-5 h-5" />
