@@ -60,6 +60,9 @@ const CreateRequest = () => {
   const [locationData, setLocationData] = useState({
     isVirtual: false,
     venueTbd: false,
+    locationName: "",
+    address: "",
+    city: "",
     locationCategory: "",
     locationType: "",
     startDate: "",

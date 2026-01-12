@@ -14,6 +14,9 @@ interface LocationDetailsSectionProps {
   formData: {
     isVirtual: boolean;
     venueTbd: boolean;
+    locationName: string;
+    address: string;
+    city: string;
     locationCategory: string;
     locationType: string;
     startDate: string;
@@ -76,47 +79,84 @@ const LocationDetailsSection = ({ formData, onChange }: LocationDetailsSectionPr
       </div>
 
       {!formData.isVirtual && !formData.venueTbd && (
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="locationCategory">Location Category</Label>
-            <Select
-              value={formData.locationCategory}
-              onValueChange={(value) => onChange("locationCategory", value)}
-            >
-              <SelectTrigger className="bg-background">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                {locationCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <>
+          {/* Location Name, Address, City */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="locationName">Location Name *</Label>
+              <Input
+                id="locationName"
+                placeholder="e.g., City Hall"
+                className="bg-background"
+                value={formData.locationName}
+                onChange={(e) => onChange("locationName", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Address *</Label>
+              <Input
+                id="address"
+                placeholder="e.g., 123 Main St."
+                className="bg-background"
+                value={formData.address}
+                onChange={(e) => onChange("address", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">City *</Label>
+              <Input
+                id="city"
+                placeholder="e.g., New York"
+                className="bg-background"
+                value={formData.city}
+                onChange={(e) => onChange("city", e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="locationType">Location Type</Label>
-            <Select
-              value={formData.locationType}
-              onValueChange={(value) => onChange("locationType", value)}
-              disabled={!formData.locationCategory}
-            >
-              <SelectTrigger className="bg-background">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                {formData.locationCategory &&
-                  locationTypes[formData.locationCategory]?.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+          {/* Location Category and Type */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="locationCategory">Location Category</Label>
+              <Select
+                value={formData.locationCategory}
+                onValueChange={(value) => onChange("locationCategory", value)}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                  {locationCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
                     </SelectItem>
                   ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="locationType">Location Type</Label>
+              <Select
+                value={formData.locationType}
+                onValueChange={(value) => onChange("locationType", value)}
+                disabled={!formData.locationCategory}
+              >
+                <SelectTrigger className="bg-background">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                  {formData.locationCategory &&
+                    locationTypes[formData.locationCategory]?.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
