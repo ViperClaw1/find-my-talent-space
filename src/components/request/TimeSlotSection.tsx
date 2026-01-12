@@ -16,6 +16,7 @@ interface TimeSlotSectionProps {
   formData: {
     bookingMode: string;
     visibility: string;
+    accessCode: string;
     timeType: string;
     fixedStartTime: string;
     fixedEndTime: string;
@@ -128,6 +129,24 @@ const TimeSlotSection = ({ formData, onChange }: TimeSlotSectionProps) => {
             <p className="font-medium text-sm">Code-Gated</p>
           </label>
         </RadioGroup>
+
+        {formData.visibility === "code-gated" && (
+          <div className="mt-4 p-4 bg-muted/50 rounded-xl space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Please provide a code that will be used by talents to access this request listing.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="accessCode">Access Code *</Label>
+              <Input
+                id="accessCode"
+                placeholder="e.g., TALENT2024"
+                className="bg-background"
+                value={formData.accessCode}
+                onChange={(e) => onChange("accessCode", e.target.value)}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Time Type */}
