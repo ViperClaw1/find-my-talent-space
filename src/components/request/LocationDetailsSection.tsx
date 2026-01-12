@@ -241,7 +241,7 @@ const LocationDetailsSection = ({ formData, onChange }: LocationDetailsSectionPr
         </div>
       </div>
 
-      {!formData.isVirtual && (
+      {!formData.isVirtual && !formData.venueTbd && (
         <div className="space-y-2">
           <Label htmlFor="otherTalents">Other Talents Invited</Label>
           <Input
@@ -338,8 +338,8 @@ const LocationDetailsSection = ({ formData, onChange }: LocationDetailsSectionPr
         </>
       )}
 
-      {/* Special Notes - Only for non-virtual events */}
-      {!formData.isVirtual && (
+      {/* Special Notes - Only for non-virtual, non-TBD events */}
+      {!formData.isVirtual && !formData.venueTbd && (
         <div className="space-y-2">
           <Label htmlFor="specialNotes">Special Notes / Instructions</Label>
           <Textarea
