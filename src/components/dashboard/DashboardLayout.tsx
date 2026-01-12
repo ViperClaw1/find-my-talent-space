@@ -69,15 +69,17 @@ const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutPr
             </button>
           </div>
 
-          {/* Create Request Button */}
-          <div className="p-4">
-            <Button asChild className="w-full">
-              <Link to="/dashboard/create-request">
-                <Plus className="w-4 h-4 mr-2" />
-                New event
-              </Link>
-            </Button>
-          </div>
+          {/* Create Request Button - Only for Clients */}
+          {userRole === "client" && (
+            <div className="p-4">
+              <Button asChild className="w-full">
+                <Link to="/dashboard/create-request">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Request
+                </Link>
+              </Button>
+            </div>
+          )}
 
           {/* Role Switcher */}
           <div className="px-4 pb-4 border-b border-border">
