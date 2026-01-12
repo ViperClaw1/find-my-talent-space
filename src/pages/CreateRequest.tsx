@@ -88,6 +88,7 @@ const CreateRequest = () => {
   const [timeSlotData, setTimeSlotData] = useState({
     bookingMode: "reserve",
     visibility: "public",
+    accessCode: "",
     timeType: "fixed",
     fixedStartTime: "",
     fixedEndTime: "",
