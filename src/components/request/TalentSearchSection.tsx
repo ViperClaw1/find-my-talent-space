@@ -35,7 +35,7 @@ const TalentSearchSection = ({ selectedTalent, onSelectTalent }: TalentSearchSec
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-20">
       <h3 className="text-lg font-semibold font-display">Select Talent</h3>
 
       {selectedTalent ? (
@@ -80,7 +80,7 @@ const TalentSearchSection = ({ selectedTalent, onSelectTalent }: TalentSearchSec
           </div>
 
           {showResults && searchQuery && (
-            <div className="absolute z-50 top-full mt-2 w-full bg-popover border border-border rounded-xl shadow-lg max-h-64 overflow-auto">
+            <div className="absolute z-[100] top-full mt-2 w-full bg-popover border border-border rounded-xl shadow-lg max-h-64 overflow-auto">
               {filteredTalents.length > 0 ? (
                 filteredTalents.map((talent) => (
                   <button
