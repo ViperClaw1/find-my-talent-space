@@ -25,14 +25,13 @@ const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutPr
   const location = useLocation();
 
   const clientNavItems = [
-    { name: "Dashboard", icon: Home, href: "/dashboard" },
+    { name: "Dashboard", icon: Home, href: "/" },
     { name: "My Requests", icon: Send, href: "/dashboard/requests" },
-    { name: "Create Request", icon: Plus, href: "/dashboard/create-request" },
     { name: "Browse Talents", icon: Search, href: "/dashboard/talents" },
   ];
 
   const talentNavItems = [
-    { name: "Dashboard", icon: Home, href: "/dashboard" },
+    { name: "Dashboard", icon: Home, href: "/" },
     { name: "Browse Opportunities", icon: Search, href: "/dashboard/opportunities" },
     { name: "My Bookings", icon: Clock, href: "/dashboard/bookings" },
     { name: "My Profile", icon: User, href: "/dashboard/profile" },
@@ -70,8 +69,18 @@ const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutPr
             </button>
           </div>
 
+          {/* Create Request Button */}
+          <div className="p-4">
+            <Button asChild className="w-full">
+              <Link to="/dashboard/create-request">
+                <Plus className="w-4 h-4 mr-2" />
+                New event
+              </Link>
+            </Button>
+          </div>
+
           {/* Role Switcher */}
-          <div className="p-4 border-b border-border">
+          <div className="px-4 pb-4 border-b border-border">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
