@@ -185,7 +185,7 @@ const CreateRequest = () => {
 
         {/* Talent Search - Only for Direct (first for direct requests) */}
         {requestType === "direct" && (
-          <div className="glass-card rounded-2xl p-6">
+          <div className="glass-card rounded-2xl p-6 relative z-50">
             <TalentSearchSection
               selectedTalent={selectedTalent}
               onSelectTalent={setSelectedTalent}
@@ -194,7 +194,7 @@ const CreateRequest = () => {
         )}
 
         {/* Service Details */}
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6 relative z-10">
           <ServiceDetailsSection
             formData={serviceData}
             onChange={(field, value) =>
@@ -205,7 +205,7 @@ const CreateRequest = () => {
         </div>
 
         {/* Location Details */}
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6 relative z-10">
           <LocationDetailsSection
             formData={locationData}
             onChange={(field, value) =>
