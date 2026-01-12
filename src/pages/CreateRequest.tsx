@@ -73,6 +73,9 @@ const CreateRequest = () => {
     ageRestriction: "",
     otherTalents: "",
     specialNotes: "",
+    meetingUrl: "",
+    accessInstructions: "",
+    attachments: [] as File[],
   });
 
   const [eventData, setEventData] = useState({

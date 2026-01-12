@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Upload, X, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -27,8 +30,11 @@ interface LocationDetailsSectionProps {
     ageRestriction: string;
     otherTalents: string;
     specialNotes: string;
+    meetingUrl: string;
+    accessInstructions: string;
+    attachments: File[];
   };
-  onChange: (field: string, value: string | boolean) => void;
+  onChange: (field: string, value: string | boolean | File[]) => void;
 }
 
 const locationCategories = [
@@ -235,27 +241,116 @@ const LocationDetailsSection = ({ formData, onChange }: LocationDetailsSectionPr
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="otherTalents">Other Talents Invited</Label>
-        <Input
-          id="otherTalents"
-          placeholder="Enter names of other talents..."
-          className="bg-background"
-          value={formData.otherTalents}
-          onChange={(e) => onChange("otherTalents", e.target.value)}
-        />
-      </div>
+      {!formData.isVirtual && (
+        <div className="space-y-2">
+          <Label htmlFor="otherTalents">Other Talents Invited</Label>
+          <Input
+            id="otherTalents"
+            placeholder="Enter names of other talents..."
+            className="bg-background"
+            value={formData.otherTalents}
+            onChange={(e) => onChange("otherTalents", e.target.value)}
+          />
+        </div>
+      )}
 
-      <div className="space-y-2">
-        <Label htmlFor="specialNotes">Special Notes / Instructions</Label>
-        <Textarea
-          id="specialNotes"
-          placeholder="Any special requirements or instructions..."
-          className="bg-background min-h-[100px]"
-          value={formData.specialNotes}
-          onChange={(e) => onChange("specialNotes", e.target.value)}
-        />
-      </div>
+      {/* Virtual Event Fields */}
+      {formData.isVirtual && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="meetingUrl">Meeting URL *</Label>
+            <Input
+              id="meetingUrl"
+              type="url"
+              placeholder="https://zoom.us/j/..."
+              className="bg-background"
+              value={formData.meetingUrl}
+              onChange={(e) => onChange("meetingUrl", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="accessInstructions">Access Instructions</Label>
+            <Textarea
+              id="accessInstructions"
+              placeholder="How to join the virtual event, passwords, any technical requirements..."
+              className="bg-background min-h-[100px]"
+              value={formData.accessInstructions}
+              onChange={(e) => onChange("accessInstructions", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Attachments</Label>
+            <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
+              <input
+                type="file"
+                id="attachments"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  onChange("attachments", [...formData.attachments, ...files]);
+                }}
+              />
+              <label htmlFor="attachments" className="cursor-pointer">
+                <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload files or drag and drop
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PDF, DOC, images up to 10MB
+                </p>
+              </label>
+            </div>
+
+            {formData.attachments.length > 0 && (
+              <div className="space-y-2 mt-4">
+                {formData.attachments.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 p-3 bg-muted rounded-lg"
+                  >
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <span className="flex-1 text-sm truncate">{file.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        const newFiles = formData.attachments.filter(
+                          (_, i) => i !== index
+                        );
+                        onChange("attachments", newFiles);
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Special Notes - Only for non-virtual events */}
+      {!formData.isVirtual && (
+        <div className="space-y-2">
+          <Label htmlFor="specialNotes">Special Notes / Instructions</Label>
+          <Textarea
+            id="specialNotes"
+            placeholder="Any special requirements or instructions..."
+            className="bg-background min-h-[100px]"
+            value={formData.specialNotes}
+            onChange={(e) => onChange("specialNotes", e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 };
