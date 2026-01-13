@@ -144,6 +144,56 @@ export type Database = {
           venue_tbd?: boolean | null
           visibility?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "fk_requests_talent"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      talents: {
+        Row: {
+          avatar_initials: string | null
+          bio: string | null
+          category: string
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          is_available: boolean | null
+          name: string
+          rating: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_initials?: string | null
+          bio?: string | null
+          category: string
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean | null
+          name: string
+          rating?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_initials?: string | null
+          bio?: string | null
+          category?: string
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean | null
+          name?: string
+          rating?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
         Relationships: []
       }
     }
