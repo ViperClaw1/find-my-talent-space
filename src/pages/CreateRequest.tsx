@@ -21,7 +21,7 @@ interface Talent {
   name: string;
   category: string;
   rating: number;
-  avatar: string;
+  avatar_initials: string | null;
 }
 
 const requestTypes = [
@@ -337,7 +337,10 @@ const CreateRequest = () => {
   };
 
   return (
-    <DashboardLayout userRole={userRole} onRoleChange={setUserRole}>
+    <DashboardLayout 
+      userRole={userRole} 
+      onRoleChange={setUserRole}
+    >
       <div className="max-w-4xl mx-auto">
         {/* Progress Steps */}
         <div className="mb-8">

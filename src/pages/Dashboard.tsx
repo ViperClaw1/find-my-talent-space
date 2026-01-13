@@ -46,9 +46,15 @@ const mockRequests = [
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("client");
+  const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
 
   return (
-    <DashboardLayout userRole={userRole} onRoleChange={setUserRole}>
+    <DashboardLayout 
+      userRole={userRole} 
+      onRoleChange={setUserRole}
+      selectedTalentId={selectedTalentId}
+      onSelectTalent={setSelectedTalentId}
+    >
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
