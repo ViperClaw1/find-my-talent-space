@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useOpenRequests, useTimeSlotRequests, useHasApplied } from "@/hooks/useApplications";
-import { useMyTalentProfiles } from "@/hooks/useTalents";
+import { useMyTalentProfiles, useTalent } from "@/hooks/useTalents";
 import { ApplyDialog } from "@/components/opportunity/ApplyDialog";
 import { format } from "date-fns";
 
@@ -117,8 +117,12 @@ const BrowseOpportunities = () => {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
 
-  const { data: openRequests = [], isLoading: loadingOpen } = useOpenRequests();
-  const { data: timeSlotRequests = [], isLoading: loadingTimeSlot } = useTimeSlotRequests();
+  // Get selected talent's category to filter opportunities
+  const { data: selectedTalent } = useTalent(selectedTalentId);
+  const talentCategory = selectedTalent?.category || null;
+
+  const { data: openRequests = [], isLoading: loadingOpen } = useOpenRequests(talentCategory);
+  const { data: timeSlotRequests = [], isLoading: loadingTimeSlot } = useTimeSlotRequests(talentCategory);
 
   const filterRequests = (requests: any[]) => {
     return requests.filter((req) => {

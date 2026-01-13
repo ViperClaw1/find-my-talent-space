@@ -50,7 +50,8 @@ const DashboardLayout = ({
   const talentNavItems = [
     { name: "Dashboard", icon: Home, href: "/" },
     { name: "Browse Opportunities", icon: Search, href: "/dashboard/opportunities" },
-    { name: "My Bookings", icon: Clock, href: "/dashboard/bookings" },
+    { name: "My Applications", icon: Send, href: "/dashboard/applications" },
+    { name: "My Requests", icon: Clock, href: "/dashboard/talent-requests" },
     { name: "My Profile", icon: User, href: "/dashboard/profile" },
   ];
 
