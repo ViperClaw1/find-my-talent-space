@@ -49,7 +49,8 @@ export const useMyApplications = (talentId: string | null, requestType?: "open" 
 
       const { data, error } = await supabase
         .from("applications")
-        .select(`
+        .select(
+          `
           *,
           requests (
             id,
@@ -62,18 +63,19 @@ export const useMyApplications = (talentId: string | null, requestType?: "open" 
             city,
             start_date
           )
-        `)
+        `,
+        )
         .eq("talent_id", talentId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      
+
       // Filter by request type if specified
       let result = data as ApplicationWithRequest[];
       if (requestType) {
-        result = result.filter(app => app.requests?.request_type === requestType);
+        result = result.filter((app) => app.requests?.request_type === requestType);
       }
-      
+
       return result;
     },
     enabled: !!user && !!talentId,
@@ -91,7 +93,8 @@ export const useMyConfirmedRequests = (talentId: string | null) => {
 
       const { data, error } = await supabase
         .from("applications")
-        .select(`
+        .select(
+          `
           *,
           requests (
             id,
@@ -104,7 +107,8 @@ export const useMyConfirmedRequests = (talentId: string | null) => {
             city,
             start_date
           )
-        `)
+        `,
+        )
         .eq("talent_id", talentId)
         .eq("status", "accepted")
         .order("created_at", { ascending: false });
@@ -127,7 +131,8 @@ export const useRequestApplications = (requestId: string | null) => {
 
       const { data, error } = await supabase
         .from("applications")
-        .select(`
+        .select(
+          `
           *,
           talents (
             id,
@@ -137,7 +142,8 @@ export const useRequestApplications = (requestId: string | null) => {
             rating,
             hourly_rate
           )
-        `)
+        `,
+        )
         .eq("request_id", requestId)
         .order("created_at", { ascending: false });
 
@@ -233,10 +239,7 @@ export const useRejectApplication = () => {
 
   return useMutation({
     mutationFn: async ({ applicationId, requestId }: { applicationId: string; requestId: string }) => {
-      const { error } = await supabase
-        .from("applications")
-        .update({ status: "rejected" })
-        .eq("id", applicationId);
+      const { error } = await supabase.from("applications").update({ status: "rejected" }).eq("id", applicationId);
 
       if (error) throw error;
       return { applicationId, requestId };
@@ -252,25 +255,19 @@ export const useRejectApplication = () => {
 };
 
 // Hook to get open requests for talents to browse (filtered by talent category)
-export const useOpenRequests = (talentCategory?: string | null) => {
+
+export const useOpenRequests = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["open-requests", talentCategory],
+    queryKey: ["open-requests"],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("requests")
         .select("*")
         .eq("request_type", "open")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-
-      // Filter by service category matching talent category if provided
-      if (talentCategory) {
-        query = query.ilike("service_category", `%${talentCategory}%`);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       return data;
