@@ -1,21 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  Home, Send, Search, Clock, User, Settings, Menu, X, 
-  Sparkles, Bell, ChevronDown, Plus, LogOut
-} from "lucide-react";
+import { Home, Send, Search, Clock, User, Settings, Menu, X, Sparkles, Bell, ChevronDown, Plus, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import TalentSelector from "./TalentSelector";
-
 interface DashboardLayoutProps {
   children: React.ReactNode;
   userRole: "client" | "talent";
@@ -23,56 +13,65 @@ interface DashboardLayoutProps {
   selectedTalentId?: string | null;
   onSelectTalent?: (talentId: string | null) => void;
 }
-
-const DashboardLayout = ({ 
-  children, 
-  userRole, 
+const DashboardLayout = ({
+  children,
+  userRole,
   onRoleChange,
   selectedTalentId,
-  onSelectTalent,
+  onSelectTalent
 }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-
+  const {
+    user,
+    signOut
+  } = useAuth();
   const handleLogout = async () => {
     await signOut();
     navigate("/auth");
   };
-
-  const clientNavItems = [
-    { name: "Dashboard", icon: Home, href: "/" },
-    { name: "My Requests", icon: Send, href: "/dashboard/requests" },
-    { name: "Browse Talents", icon: Search, href: "/dashboard/talents" },
-  ];
-
-  const talentNavItems = [
-    { name: "Dashboard", icon: Home, href: "/" },
-    { name: "Browse Opportunities", icon: Search, href: "/dashboard/opportunities" },
-    { name: "My Applications", icon: Send, href: "/dashboard/applications" },
-    { name: "My Requests", icon: Clock, href: "/dashboard/talent-requests" },
-    { name: "My Profile", icon: User, href: "/dashboard/profile" },
-  ];
-
+  const clientNavItems = [{
+    name: "Dashboard",
+    icon: Home,
+    href: "/"
+  }, {
+    name: "My Requests",
+    icon: Send,
+    href: "/dashboard/requests"
+  }, {
+    name: "Browse Talents",
+    icon: Search,
+    href: "/dashboard/talents"
+  }];
+  const talentNavItems = [{
+    name: "Dashboard",
+    icon: Home,
+    href: "/"
+  }, {
+    name: "Browse Opportunities",
+    icon: Search,
+    href: "/dashboard/opportunities"
+  }, {
+    name: "My Applications",
+    icon: Send,
+    href: "/dashboard/applications"
+  }, {
+    name: "My Requests",
+    icon: Clock,
+    href: "/dashboard/talent-requests"
+  }, {
+    name: "My Profile",
+    icon: User,
+    href: "/dashboard/profile"
+  }];
   const navItems = userRole === "client" ? clientNavItems : talentNavItems;
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {sidebarOpen && <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transform transition-transform duration-300 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
+      <aside className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between p-4 border-b border-border">
@@ -88,19 +87,17 @@ const DashboardLayout = ({
           </div>
 
           {/* Create Request Button - Only for Clients */}
-          {userRole === "client" && (
-            <div className="p-4">
+          {userRole === "client" && <div className="p-4">
               <Button asChild className="w-full">
                 <Link to="/dashboard/create-request">
                   <Plus className="w-4 h-4 mr-2" />
                   New Request
                 </Link>
               </Button>
-            </div>
-          )}
+            </div>}
 
           {/* Role Switcher */}
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-4 py-[16px]">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
@@ -123,47 +120,27 @@ const DashboardLayout = ({
           </div>
 
           {/* Talent Profile Selector - Only for Talent Mode */}
-          {userRole === "talent" && onSelectTalent && (
-            <div className="px-4 pb-4 border-b border-border">
+          {userRole === "talent" && onSelectTalent && <div className="px-4 pb-4 border-b border-border">
               <p className="text-xs text-muted-foreground mb-2 px-1">Acting as:</p>
-              <TalentSelector
-                selectedTalentId={selectedTalentId || null}
-                onSelectTalent={onSelectTalent}
-              />
-            </div>
-          )}
+              <TalentSelector selectedTalentId={selectedTalentId || null} onSelectTalent={onSelectTalent} />
+            </div>}
 
-          {userRole === "client" && (
-            <div className="border-b border-border" />
-          )}
+          {userRole === "client" && <div className="border-b border-border" />}
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`}
-                >
+            {navItems.map(item => {
+            const isActive = location.pathname === item.href;
+            return <Link key={item.name} to={item.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
                   <item.icon className="w-5 h-5" />
                   {item.name}
-                </Link>
-              );
-            })}
+                </Link>;
+          })}
           </nav>
 
           {/* Settings */}
           <div className="p-4 border-t border-border">
-            <Link
-              to="/dashboard/settings"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            >
+            <Link to="/dashboard/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors">
               <Settings className="w-5 h-5" />
               Settings
             </Link>
@@ -176,10 +153,7 @@ const DashboardLayout = ({
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
           <div className="flex items-center justify-between px-4 h-16">
-            <button
-              className="lg:hidden p-2 -ml-2"
-              onClick={() => setSidebarOpen(true)}
-            >
+            <button className="lg:hidden p-2 -ml-2" onClick={() => setSidebarOpen(true)}>
               <Menu className="w-6 h-6" />
             </button>
 
@@ -193,8 +167,7 @@ const DashboardLayout = ({
                 </span>
               </Button>
 
-              {user ? (
-                <DropdownMenu>
+              {user ? <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
@@ -224,30 +197,28 @@ const DashboardLayout = ({
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button asChild size="sm">
+                </DropdownMenu> : <Button asChild size="sm">
                   <Link to="/auth">Login</Link>
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
         </header>
 
         {/* Page content */}
         <main className="p-6">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+          <motion.div key={location.pathname} initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          duration: 0.3
+        }}>
             {children}
           </motion.div>
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default DashboardLayout;
