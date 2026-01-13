@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOpenRequests, useTimeSlotRequests, useHasApplied } from "@/hooks/useApplications";
 import { useMyTalentProfiles, useTalent } from "@/hooks/useTalents";
 import { ApplyDialog } from "@/components/opportunity/ApplyDialog";
@@ -45,11 +39,7 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
     >
       <div className="flex items-start justify-between mb-4">
         <Badge
-          className={
-            request.request_type === "open"
-              ? "bg-amber-100 text-amber-700"
-              : "bg-purple-100 text-purple-700"
-          }
+          className={request.request_type === "open" ? "bg-amber-100 text-amber-700" : "bg-purple-100 text-purple-700"}
         >
           {request.request_type === "open" ? "Open Request" : "Time Slot"}
         </Badge>
@@ -59,12 +49,8 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold mb-2">
-        {request.event_title || request.service_category}
-      </h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        {request.service_category}
-      </p>
+      <h3 className="text-xl font-semibold mb-2">{request.event_title || request.service_category}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{request.service_category}</p>
 
       <div className="grid grid-cols-2 gap-3 text-sm mb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -88,9 +74,7 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
       </div>
 
       {request.special_notes && (
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {request.special_notes}
-        </p>
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{request.special_notes}</p>
       )}
 
       <Button
@@ -99,11 +83,7 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
         disabled={!selectedTalentId || hasApplied}
         variant={hasApplied ? "outline" : "default"}
       >
-        {!selectedTalentId 
-          ? "Select a talent profile to apply" 
-          : hasApplied 
-            ? "Already Applied" 
-            : "Apply Now"}
+        {!selectedTalentId ? "Select a talent profile to apply" : hasApplied ? "Already Applied" : "Apply Now"}
       </Button>
     </motion.div>
   );
@@ -121,16 +101,15 @@ const BrowseOpportunities = () => {
   const { data: selectedTalent } = useTalent(selectedTalentId);
   const talentCategory = selectedTalent?.category || null;
 
-  const { data: openRequests = [], isLoading: loadingOpen } = useOpenRequests(talentCategory);
-  const { data: timeSlotRequests = [], isLoading: loadingTimeSlot } = useTimeSlotRequests(talentCategory);
+  const { data: openRequests = [], isLoading: loadingOpen } = useOpenRequests();
+  const { data: timeSlotRequests = [], isLoading: loadingTimeSlot } = useTimeSlotRequests();
 
   const filterRequests = (requests: any[]) => {
     return requests.filter((req) => {
       const matchesSearch =
         (req.event_title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
         req.service_category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        categoryFilter === "all" || req.service_category.includes(categoryFilter);
+      const matchesCategory = categoryFilter === "all" || req.service_category.includes(categoryFilter);
       return matchesSearch && matchesCategory;
     });
   };
@@ -166,12 +145,8 @@ const BrowseOpportunities = () => {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold font-display mb-2">
-            Browse Opportunities
-          </h1>
-          <p className="text-muted-foreground">
-            Discover and apply to open requests that match your skills
-          </p>
+          <h1 className="text-3xl font-bold font-display mb-2">Browse Opportunities</h1>
+          <p className="text-muted-foreground">Discover and apply to open requests that match your skills</p>
         </div>
 
         {/* Filters */}
