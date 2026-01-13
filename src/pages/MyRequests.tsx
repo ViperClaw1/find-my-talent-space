@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Send, Users, Clock, Eye, MoreHorizontal, Calendar, DollarSign, Loader2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Send, Users, Clock, Eye, MoreHorizontal, Calendar, DollarSign, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRequests } from "@/hooks/useRequests";
 import { useAuth } from "@/hooks/useAuth";
+import { useRequestApplications } from "@/hooks/useApplications";
+import { ApplicationsList } from "@/components/request/ApplicationsList";
 import { format } from "date-fns";
 
 const getStatusBadge = (status: string) => {
@@ -39,6 +42,92 @@ const formatDate = (dateString: string | null) => {
   } catch {
     return dateString;
   }
+};
+
+interface OpenRequestCardProps {
+  request: any;
+}
+
+const OpenRequestCard = ({ request }: OpenRequestCardProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { data: applications = [] } = useRequestApplications(request.id);
+  const pendingCount = applications.filter(a => a.status === "pending").length;
+
+  return (
+    <Card>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle className="text-lg">{request.event_title || request.service_category}</CardTitle>
+            <CardDescription>{request.service_category}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {pendingCount > 0 && (
+              <Badge variant="default" className="bg-primary">
+                {pendingCount} pending
+              </Badge>
+            )}
+            {getStatusBadge(request.status)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive">
+                  Cancel Request
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center gap-1">
+              <DollarSign className="w-4 h-4" />
+              Budget: ${Number(request.offered_amount).toFixed(2)}
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              {request.talents_needed} talents needed
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              {formatDate(request.created_at)}
+            </div>
+          </div>
+
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" size="sm" className="w-full">
+              {isOpen ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-2" />
+                  Hide Applications
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  View Applications ({applications.length})
+                </>
+              )}
+            </Button>
+          </CollapsibleTrigger>
+
+          <CollapsibleContent className="mt-4">
+            <ApplicationsList 
+              requestId={request.id} 
+              offeredAmount={Number(request.offered_amount)} 
+            />
+          </CollapsibleContent>
+        </CardContent>
+      </Collapsible>
+    </Card>
+  );
 };
 
 const MyRequests = () => {
@@ -181,52 +270,7 @@ const MyRequests = () => {
                 )
               ) : (
                 openRequests.map((request) => (
-                  <Card key={request.id}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <div>
-                        <CardTitle className="text-lg">{request.event_title || request.service_category}</CardTitle>
-                        <CardDescription>{request.service_category}</CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusBadge(request.status)}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              View Applicants
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              Cancel Request
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
-                          Budget: ${Number(request.offered_amount).toFixed(2)}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {request.talents_needed} talents needed
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {formatDate(request.created_at)}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <OpenRequestCard key={request.id} request={request} />
                 ))
               )}
             </TabsContent>
