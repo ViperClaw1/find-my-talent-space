@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Send, Clock, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import ServiceDetailsSection from "@/components/request/ServiceDetailsSection";
 import LocationDetailsSection from "@/components/request/LocationDetailsSection";
@@ -11,6 +10,9 @@ import EventSection from "@/components/request/EventSection";
 import TalentSearchSection from "@/components/request/TalentSearchSection";
 import TimeSlotSection from "@/components/request/TimeSlotSection";
 import DirectRequestConfirmDialog from "@/components/request/DirectRequestConfirmDialog";
+import { useCreateRequest } from "@/hooks/useRequests";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 type RequestType = "direct" | "open" | "time-slot";
 
@@ -45,6 +47,8 @@ const requestTypes = [
 
 const CreateRequest = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const createRequest = useCreateRequest();
   const [userRole, setUserRole] = useState<"client" | "talent">("client");
   const [step, setStep] = useState(1);
   const [requestType, setRequestType] = useState<RequestType | null>(null);
@@ -121,12 +125,86 @@ const CreateRequest = () => {
     }
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
+    if (!user) {
+      toast.error("Please log in to create a request");
+      navigate("/auth");
+      return;
+    }
+    
+    if (!requestType) return;
+    
     setShowConfirmDialog(false);
-    toast.success("Request created successfully!", {
-      description: "Your request has been submitted and is now active.",
-    });
-    navigate("/dashboard/requests");
+    
+    const SERVICE_FEE_PERCENTAGE = 0.10;
+    const offeredAmount = parseFloat(serviceData.offeredAmount) || 0;
+    const serviceFee = offeredAmount * SERVICE_FEE_PERCENTAGE;
+    const totalAmount = offeredAmount + serviceFee;
+    
+    // Combine date and time
+    const startDateTime = locationData.startDate && locationData.startTime 
+      ? `${locationData.startDate}T${locationData.startTime}:00` 
+      : locationData.startDate || null;
+    const endDateTime = locationData.endDate && locationData.endTime 
+      ? `${locationData.endDate}T${locationData.endTime}:00` 
+      : locationData.endDate || null;
+    
+    try {
+      await createRequest.mutateAsync({
+        request_type: requestType,
+        
+        // Talent info (for direct requests)
+        talent_id: selectedTalent?.id || null,
+        talent_name: selectedTalent?.name || null,
+        talent_category: selectedTalent?.category || null,
+        
+        // Service details
+        service_category: serviceData.serviceCategory,
+        service_type: serviceData.serviceType || null,
+        service_listing: serviceData.serviceListing || null,
+        offered_amount: offeredAmount,
+        talents_needed: parseInt(serviceData.talentsNeeded) || 1,
+        
+        // Location details
+        is_virtual: locationData.isVirtual,
+        venue_tbd: locationData.venueTbd,
+        location_name: locationData.locationName || null,
+        address: locationData.address || null,
+        city: locationData.city || null,
+        location_category: locationData.locationCategory || null,
+        location_type: locationData.locationType || null,
+        start_date: startDateTime,
+        end_date: endDateTime,
+        admission_price: locationData.admissionPrice || null,
+        age_restriction: locationData.ageRestriction || null,
+        other_talents: locationData.otherTalents || null,
+        special_notes: locationData.specialNotes || null,
+        meeting_url: locationData.meetingUrl || null,
+        access_instructions: locationData.accessInstructions || null,
+        
+        // Event details
+        event_title: eventData.eventTitle || null,
+        event_category: eventData.eventCategory || null,
+        
+        // Time-slot specific
+        booking_mode: timeSlotData.bookingMode || null,
+        visibility: timeSlotData.visibility || null,
+        access_code: timeSlotData.accessCode || null,
+        time_type: timeSlotData.timeType || null,
+        fixed_start_time: timeSlotData.fixedStartTime || null,
+        fixed_end_time: timeSlotData.fixedEndTime || null,
+        fixed_slots: parseInt(timeSlotData.fixedSlots) || null,
+        tiers: timeSlotData.tiers || null,
+        
+        // Calculated fields
+        service_fee: serviceFee,
+        total_amount: totalAmount,
+      });
+      
+      navigate("/dashboard/requests");
+    } catch (error) {
+      // Error is handled by the mutation
+    }
   };
 
   const canProceed = () => {
