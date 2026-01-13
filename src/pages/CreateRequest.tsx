@@ -10,6 +10,7 @@ import LocationDetailsSection from "@/components/request/LocationDetailsSection"
 import EventSection from "@/components/request/EventSection";
 import TalentSearchSection from "@/components/request/TalentSearchSection";
 import TimeSlotSection from "@/components/request/TimeSlotSection";
+import DirectRequestConfirmDialog from "@/components/request/DirectRequestConfirmDialog";
 
 type RequestType = "direct" | "open" | "time-slot";
 
@@ -48,6 +49,7 @@ const CreateRequest = () => {
   const [step, setStep] = useState(1);
   const [requestType, setRequestType] = useState<RequestType | null>(null);
   const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const [serviceData, setServiceData] = useState({
     serviceCategory: "",
@@ -111,11 +113,20 @@ const CreateRequest = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmitClick = () => {
+    if (requestType === "direct") {
+      setShowConfirmDialog(true);
+    } else {
+      handleFinalSubmit();
+    }
+  };
+
+  const handleFinalSubmit = () => {
+    setShowConfirmDialog(false);
     toast.success("Request created successfully!", {
       description: "Your request has been submitted and is now active.",
     });
-    navigate("/dashboard");
+    navigate("/dashboard/requests");
   };
 
   const canProceed = () => {
@@ -326,12 +337,21 @@ const CreateRequest = () => {
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button variant="hero" onClick={handleSubmit}>
+            <Button variant="hero" onClick={handleSubmitClick}>
               Submit Request
               <Check className="w-4 h-4 ml-2" />
             </Button>
           )}
         </div>
+
+        {/* Confirmation Dialog for Direct Requests */}
+        <DirectRequestConfirmDialog
+          open={showConfirmDialog}
+          onOpenChange={setShowConfirmDialog}
+          onConfirm={handleFinalSubmit}
+          offerAmount={serviceData.offeredAmount}
+          selectedTalent={selectedTalent}
+        />
       </div>
     </DashboardLayout>
   );
