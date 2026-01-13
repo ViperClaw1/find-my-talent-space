@@ -254,8 +254,6 @@ export const useRejectApplication = () => {
   });
 };
 
-// Hook to get open requests for talents to browse (filtered by talent category)
-
 export const useOpenRequests = () => {
   const { user } = useAuth();
 
@@ -276,26 +274,18 @@ export const useOpenRequests = () => {
   });
 };
 
-// Hook to get time-slot requests for talents to browse (filtered by talent category)
-export const useTimeSlotRequests = (talentCategory?: string | null) => {
+export const useTimeSlotRequests = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["time-slot-requests", talentCategory],
+    queryKey: ["time-slot-requests"],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("requests")
         .select("*")
         .eq("request_type", "time-slot")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-
-      // Filter by service category matching talent category if provided
-      if (talentCategory) {
-        query = query.ilike("service_category", `%${talentCategory}%`);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       return data;
