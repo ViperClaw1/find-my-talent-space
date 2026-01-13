@@ -221,18 +221,16 @@ const CreateRequest = () => {
           />
         </div>
 
-        {/* Event Section - Only for Time-Slot (required) */}
-        {requestType === "time-slot" && (
-          <div className="glass-card rounded-2xl p-6">
-            <EventSection
-              formData={eventData}
-              onChange={(field, value) =>
-                setEventData((prev) => ({ ...prev, [field]: value }))
-              }
-              isRequired
-            />
-          </div>
-        )}
+        {/* Event Section - Required for Time-Slot, Optional for Open/Direct */}
+        <div className="glass-card rounded-2xl p-6">
+          <EventSection
+            formData={eventData}
+            onChange={(field, value) =>
+              setEventData((prev) => ({ ...prev, [field]: value }))
+            }
+            isRequired={requestType === "time-slot"}
+          />
+        </div>
 
         {/* Time Slot Section - Only for Time-Slot */}
         {requestType === "time-slot" && (
