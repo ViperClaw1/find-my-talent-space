@@ -99,6 +99,7 @@ const mockOpportunities: Opportunity[] = [
 
 const BrowseOpportunities = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("talent");
+  const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
@@ -120,7 +121,12 @@ const BrowseOpportunities = () => {
   };
 
   return (
-    <DashboardLayout userRole={userRole} onRoleChange={setUserRole}>
+    <DashboardLayout 
+      userRole={userRole} 
+      onRoleChange={setUserRole}
+      selectedTalentId={selectedTalentId}
+      onSelectTalent={setSelectedTalentId}
+    >
       <div className="space-y-8">
         {/* Header */}
         <div>

@@ -43,6 +43,7 @@ const formatDate = (dateString: string | null) => {
 
 const MyRequests = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("client");
+  const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
   const { user } = useAuth();
   
   const { data: directRequests = [], isLoading: loadingDirect } = useRequests("direct");
@@ -68,7 +69,12 @@ const MyRequests = () => {
   );
 
   return (
-    <DashboardLayout userRole={userRole} onRoleChange={setUserRole}>
+    <DashboardLayout 
+      userRole={userRole} 
+      onRoleChange={setUserRole}
+      selectedTalentId={selectedTalentId}
+      onSelectTalent={setSelectedTalentId}
+    >
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold font-display">My Requests</h1>

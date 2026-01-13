@@ -18,7 +18,7 @@ interface Talent {
   name: string;
   category: string;
   rating: number;
-  avatar: string;
+  avatar_initials: string | null;
 }
 
 interface DirectRequestConfirmDialogProps {

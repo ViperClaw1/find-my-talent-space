@@ -14,14 +14,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import TalentSelector from "./TalentSelector";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   userRole: "client" | "talent";
   onRoleChange: (role: "client" | "talent") => void;
+  selectedTalentId?: string | null;
+  onSelectTalent?: (talentId: string | null) => void;
 }
 
-const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutProps) => {
+const DashboardLayout = ({ 
+  children, 
+  userRole, 
+  onRoleChange,
+  selectedTalentId,
+  onSelectTalent,
+}: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -90,7 +99,7 @@ const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutPr
           )}
 
           {/* Role Switcher */}
-          <div className="px-4 pb-4 border-b border-border">
+          <div className="px-4 pb-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
@@ -111,6 +120,21 @@ const DashboardLayout = ({ children, userRole, onRoleChange }: DashboardLayoutPr
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Talent Profile Selector - Only for Talent Mode */}
+          {userRole === "talent" && onSelectTalent && (
+            <div className="px-4 pb-4 border-b border-border">
+              <p className="text-xs text-muted-foreground mb-2 px-1">Acting as:</p>
+              <TalentSelector
+                selectedTalentId={selectedTalentId || null}
+                onSelectTalent={onSelectTalent}
+              />
+            </div>
+          )}
+
+          {userRole === "client" && (
+            <div className="border-b border-border" />
+          )}
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1">

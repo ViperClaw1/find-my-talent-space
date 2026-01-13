@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Search, X, Check } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
+import { useTalents } from "@/hooks/useTalents";
 
 interface Talent {
   id: string;
   name: string;
   category: string;
   rating: number;
-  avatar: string;
+  avatar_initials: string | null;
 }
 
 interface TalentSearchSectionProps {
@@ -16,20 +17,12 @@ interface TalentSearchSectionProps {
   onSelectTalent: (talent: Talent | null) => void;
 }
 
-// Using placeholder UUIDs for mock data - these would come from a real talents table
-const mockTalents: Talent[] = [
-  { id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890", name: "Alex Johnson", category: "DJ", rating: 4.9, avatar: "AJ" },
-  { id: "b2c3d4e5-f6a7-8901-bcde-f12345678901", name: "Maria Garcia", category: "Photographer", rating: 4.8, avatar: "MG" },
-  { id: "c3d4e5f6-a7b8-9012-cdef-123456789012", name: "David Chen", category: "Live Band", rating: 4.7, avatar: "DC" },
-  { id: "d4e5f6a7-b8c9-0123-defa-234567890123", name: "Sarah Williams", category: "Makeup Artist", rating: 5.0, avatar: "SW" },
-  { id: "e5f6a7b8-c9d0-1234-efab-345678901234", name: "Michael Brown", category: "Chef", rating: 4.6, avatar: "MB" },
-];
-
 const TalentSearchSection = ({ selectedTalent, onSelectTalent }: TalentSearchSectionProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const { data: talents = [], isLoading } = useTalents();
 
-  const filteredTalents = mockTalents.filter(
+  const filteredTalents = talents.filter(
     (talent) =>
       talent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       talent.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -43,7 +36,7 @@ const TalentSearchSection = ({ selectedTalent, onSelectTalent }: TalentSearchSec
         <div className="flex items-center gap-4 p-4 bg-accent rounded-xl">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
             <span className="text-sm font-medium text-primary-foreground">
-              {selectedTalent.avatar}
+              {selectedTalent.avatar_initials || selectedTalent.name.substring(0, 2).toUpperCase()}
             </span>
           </div>
           <div className="flex-1">
@@ -82,20 +75,30 @@ const TalentSearchSection = ({ selectedTalent, onSelectTalent }: TalentSearchSec
 
           {showResults && searchQuery && (
             <div className="absolute z-[100] top-full mt-2 w-full bg-popover border border-border rounded-xl shadow-lg max-h-64 overflow-auto">
-              {filteredTalents.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredTalents.length > 0 ? (
                 filteredTalents.map((talent) => (
                   <button
                     key={talent.id}
                     className="w-full flex items-center gap-4 p-3 hover:bg-accent transition-colors text-left"
                     onClick={() => {
-                      onSelectTalent(talent);
+                      onSelectTalent({
+                        id: talent.id,
+                        name: talent.name,
+                        category: talent.category,
+                        rating: Number(talent.rating) || 5.0,
+                        avatar_initials: talent.avatar_initials,
+                      });
                       setSearchQuery("");
                       setShowResults(false);
                     }}
                   >
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
                       <span className="text-xs font-medium text-primary-foreground">
-                        {talent.avatar}
+                        {talent.avatar_initials || talent.name.substring(0, 2).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1">
