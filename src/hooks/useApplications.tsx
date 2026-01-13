@@ -27,21 +27,25 @@ interface ApplicationWithTalent extends Application {
 interface ApplicationWithRequest extends Application {
   requests: {
     id: string;
+    request_type: string;
     service_category: string;
     event_title: string | null;
     offered_amount: number;
     talents_needed: number | null;
+    status: string;
+    city: string | null;
+    start_date: string | null;
   };
 }
 
 // Hook for talents to get their applications
-export const useMyApplications = () => {
+export const useMyApplications = (talentId: string | null, requestType?: "open" | "time-slot") => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["my-applications", user?.id],
+    queryKey: ["my-applications", talentId, requestType],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !talentId) return [];
 
       const { data, error } = await supabase
         .from("applications")
@@ -49,18 +53,66 @@ export const useMyApplications = () => {
           *,
           requests (
             id,
+            request_type,
             service_category,
             event_title,
             offered_amount,
-            talents_needed
+            talents_needed,
+            status,
+            city,
+            start_date
           )
         `)
+        .eq("talent_id", talentId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      // Filter by request type if specified
+      let result = data as ApplicationWithRequest[];
+      if (requestType) {
+        result = result.filter(app => app.requests?.request_type === requestType);
+      }
+      
+      return result;
+    },
+    enabled: !!user && !!talentId,
+  });
+};
+
+// Hook for talents to get their accepted applications (confirmed requests)
+export const useMyConfirmedRequests = (talentId: string | null) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["my-confirmed-requests", talentId],
+    queryFn: async () => {
+      if (!user || !talentId) return [];
+
+      const { data, error } = await supabase
+        .from("applications")
+        .select(`
+          *,
+          requests (
+            id,
+            request_type,
+            service_category,
+            event_title,
+            offered_amount,
+            talents_needed,
+            status,
+            city,
+            start_date
+          )
+        `)
+        .eq("talent_id", talentId)
+        .eq("status", "accepted")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as ApplicationWithRequest[];
     },
-    enabled: !!user,
+    enabled: !!user && !!talentId,
   });
 };
 
@@ -199,19 +251,26 @@ export const useRejectApplication = () => {
   });
 };
 
-// Hook to get open requests for talents to browse
-export const useOpenRequests = () => {
+// Hook to get open requests for talents to browse (filtered by talent category)
+export const useOpenRequests = (talentCategory?: string | null) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["open-requests"],
+    queryKey: ["open-requests", talentCategory],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("requests")
         .select("*")
         .eq("request_type", "open")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
+
+      // Filter by service category matching talent category if provided
+      if (talentCategory) {
+        query = query.ilike("service_category", `%${talentCategory}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data;
@@ -220,19 +279,26 @@ export const useOpenRequests = () => {
   });
 };
 
-// Hook to get time-slot requests for talents to browse
-export const useTimeSlotRequests = () => {
+// Hook to get time-slot requests for talents to browse (filtered by talent category)
+export const useTimeSlotRequests = (talentCategory?: string | null) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["time-slot-requests"],
+    queryKey: ["time-slot-requests", talentCategory],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("requests")
         .select("*")
         .eq("request_type", "time-slot")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
+
+      // Filter by service category matching talent category if provided
+      if (talentCategory) {
+        query = query.ilike("service_category", `%${talentCategory}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data;
