@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, MapPin, Calendar, DollarSign, Users, Clock } from "lucide-react";
+import { Search, Filter, MapPin, Calendar, DollarSign, Users, Clock, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -12,117 +13,148 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { useOpenRequests, useTimeSlotRequests, useHasApplied } from "@/hooks/useApplications";
+import { useMyTalentProfiles } from "@/hooks/useTalents";
+import { ApplyDialog } from "@/components/opportunity/ApplyDialog";
+import { format } from "date-fns";
 
-interface Opportunity {
-  id: string;
-  type: "open" | "time-slot";
-  title: string;
-  category: string;
-  location: string;
-  isVirtual: boolean;
-  date: string;
-  budget: number;
-  talentsNeeded: number;
-  talentsApplied: number;
-  description: string;
-  requirements: string[];
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return "Flexible";
+  try {
+    return format(new Date(dateString), "MMM d, yyyy");
+  } catch {
+    return dateString;
+  }
+};
+
+interface OpportunityCardProps {
+  request: any;
+  onApply: () => void;
+  selectedTalentId: string | null;
 }
 
-const mockOpportunities: Opportunity[] = [
-  {
-    id: "1",
-    type: "open",
-    title: "DJ for Summer Music Festival",
-    category: "Music & Entertainment",
-    location: "Miami Beach, FL",
-    isVirtual: false,
-    date: "Feb 15, 2026",
-    budget: 2500,
-    talentsNeeded: 3,
-    talentsApplied: 8,
-    description: "Looking for experienced DJs to perform at our annual summer music festival. Multiple stages with different genres.",
-    requirements: ["5+ years experience", "Own equipment", "Festival experience preferred"],
-  },
-  {
-    id: "2",
-    type: "time-slot",
-    title: "Corporate Photography Session",
-    category: "Photography & Videography",
-    location: "New York, NY",
-    isVirtual: false,
-    date: "Jan 25, 2026",
-    budget: 1500,
-    talentsNeeded: 2,
-    talentsApplied: 4,
-    description: "Professional headshots and team photos for a tech company. Modern, clean style required.",
-    requirements: ["Professional portfolio", "Studio lighting experience", "Quick turnaround"],
-  },
-  {
-    id: "3",
-    type: "open",
-    title: "Virtual Yoga Instructors",
-    category: "Sports & Fitness",
-    location: "Virtual",
-    isVirtual: true,
-    date: "Ongoing",
-    budget: 800,
-    talentsNeeded: 5,
-    talentsApplied: 12,
-    description: "Seeking certified yoga instructors for our wellness app. Various styles including Vinyasa, Hatha, and Yin.",
-    requirements: ["Yoga certification", "High-quality camera setup", "Engaging teaching style"],
-  },
-  {
-    id: "4",
-    type: "time-slot",
-    title: "Wedding Makeup Artists",
-    category: "Beauty & Wellness",
-    location: "Los Angeles, CA",
-    isVirtual: false,
-    date: "Mar 20, 2026",
-    budget: 600,
-    talentsNeeded: 2,
-    talentsApplied: 6,
-    description: "Looking for talented makeup artists for a spring wedding. Bridal and bridal party makeup needed.",
-    requirements: ["Bridal experience", "Own kit", "References required"],
-  },
-];
+const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCardProps) => {
+  const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <Badge
+          className={
+            request.request_type === "open"
+              ? "bg-amber-100 text-amber-700"
+              : "bg-purple-100 text-purple-700"
+          }
+        >
+          {request.request_type === "open" ? "Open Request" : "Time Slot"}
+        </Badge>
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">Budget</p>
+          <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
+        </div>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-2">
+        {request.event_title || request.service_category}
+      </h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        {request.service_category}
+      </p>
+
+      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4" />
+          <span>{request.is_virtual ? "Virtual" : request.city || "Location TBD"}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="w-4 h-4" />
+          <span>{formatDate(request.start_date)}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Users className="w-4 h-4" />
+          <span>{request.talents_needed || 1} talent(s) needed</span>
+        </div>
+        {request.request_type === "time-slot" && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            <span>{request.fixed_slots || 0} slots</span>
+          </div>
+        )}
+      </div>
+
+      {request.special_notes && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+          {request.special_notes}
+        </p>
+      )}
+
+      <Button
+        className="w-full"
+        onClick={onApply}
+        disabled={!selectedTalentId || hasApplied}
+        variant={hasApplied ? "outline" : "default"}
+      >
+        {!selectedTalentId 
+          ? "Select a talent profile to apply" 
+          : hasApplied 
+            ? "Already Applied" 
+            : "Apply Now"}
+      </Button>
+    </motion.div>
+  );
+};
 
 const BrowseOpportunities = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("talent");
   const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false);
 
-  const filteredOpportunities = mockOpportunities.filter((opp) => {
-    const matchesSearch =
-      opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      opp.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || opp.category.includes(categoryFilter);
-    return matchesSearch && matchesCategory;
-  });
+  const { data: openRequests = [], isLoading: loadingOpen } = useOpenRequests();
+  const { data: timeSlotRequests = [], isLoading: loadingTimeSlot } = useTimeSlotRequests();
 
-  const handleApply = (opportunity: Opportunity) => {
-    toast.success("Application submitted!", {
-      description: `Your application for "${opportunity.title}" has been sent.`,
+  const filterRequests = (requests: any[]) => {
+    return requests.filter((req) => {
+      const matchesSearch =
+        (req.event_title?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+        req.service_category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        categoryFilter === "all" || req.service_category.includes(categoryFilter);
+      return matchesSearch && matchesCategory;
     });
-    setSelectedOpportunity(null);
   };
 
+  const filteredOpenRequests = filterRequests(openRequests);
+  const filteredTimeSlotRequests = filterRequests(timeSlotRequests);
+
+  const handleApply = (request: any) => {
+    setSelectedRequest(request);
+    setApplyDialogOpen(true);
+  };
+
+  const renderLoading = () => (
+    <div className="flex flex-col items-center justify-center py-12">
+      <Loader2 className="w-8 h-8 text-muted-foreground mb-4 animate-spin" />
+      <p className="text-muted-foreground">Loading opportunities...</p>
+    </div>
+  );
+
+  const renderEmpty = (message: string) => (
+    <div className="text-center py-12">
+      <p className="text-muted-foreground">{message}</p>
+    </div>
+  );
+
   return (
-    <DashboardLayout 
-      userRole={userRole} 
+    <DashboardLayout
+      userRole={userRole}
       onRoleChange={setUserRole}
       selectedTalentId={selectedTalentId}
       onSelectTalent={setSelectedTalentId}
@@ -164,142 +196,72 @@ const BrowseOpportunities = () => {
           </Select>
         </div>
 
-        {/* Opportunities Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {filteredOpportunities.map((opportunity, index) => (
-            <motion.div
-              key={opportunity.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <Badge
-                  className={
-                    opportunity.type === "open"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-purple-100 text-purple-700"
-                  }
-                >
-                  {opportunity.type === "open" ? "Open Request" : "Time Slot"}
-                </Badge>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Budget</p>
-                  <p className="font-bold text-lg">${opportunity.budget}</p>
-                </div>
+        {/* Tabs for Open and Time-Slot */}
+        <Tabs defaultValue="open" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="open" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>Open Requests</span>
+              <Badge variant="secondary" className="ml-1">
+                {filteredOpenRequests.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="time-slot" className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>Time-Slot Requests</span>
+              <Badge variant="secondary" className="ml-1">
+                {filteredTimeSlotRequests.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="open">
+            {loadingOpen ? (
+              renderLoading()
+            ) : filteredOpenRequests.length === 0 ? (
+              renderEmpty("No open requests available")
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {filteredOpenRequests.map((request) => (
+                  <OpportunityCard
+                    key={request.id}
+                    request={request}
+                    onApply={() => handleApply(request)}
+                    selectedTalentId={selectedTalentId}
+                  />
+                ))}
               </div>
+            )}
+          </TabsContent>
 
-              <h3 className="text-xl font-semibold mb-2">{opportunity.title}</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {opportunity.category}
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{opportunity.isVirtual ? "Virtual" : opportunity.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>{opportunity.date}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>
-                    {opportunity.talentsApplied}/{opportunity.talentsNeeded} applied
-                  </span>
-                </div>
-                {opportunity.type === "time-slot" && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>Multiple slots</span>
-                  </div>
-                )}
+          <TabsContent value="time-slot">
+            {loadingTimeSlot ? (
+              renderLoading()
+            ) : filteredTimeSlotRequests.length === 0 ? (
+              renderEmpty("No time-slot requests available")
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {filteredTimeSlotRequests.map((request) => (
+                  <OpportunityCard
+                    key={request.id}
+                    request={request}
+                    onApply={() => handleApply(request)}
+                    selectedTalentId={selectedTalentId}
+                  />
+                ))}
               </div>
-
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                {opportunity.description}
-              </p>
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    className="w-full"
-                    onClick={() => setSelectedOpportunity(opportunity)}
-                  >
-                    View Details & Apply
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg bg-card">
-                  <DialogHeader>
-                    <DialogTitle className="font-display">{opportunity.title}</DialogTitle>
-                    <DialogDescription>{opportunity.category}</DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-muted-foreground">Location</p>
-                        <p className="font-medium">
-                          {opportunity.isVirtual ? "Virtual" : opportunity.location}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-muted-foreground">Date</p>
-                        <p className="font-medium">{opportunity.date}</p>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-muted-foreground">Budget</p>
-                        <p className="font-medium">${opportunity.budget}</p>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-muted-foreground">Spots</p>
-                        <p className="font-medium">
-                          {opportunity.talentsNeeded - opportunity.talentsApplied} remaining
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="font-medium mb-2">Description</p>
-                      <p className="text-sm text-muted-foreground">
-                        {opportunity.description}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="font-medium mb-2">Requirements</p>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {opportunity.requirements.map((req, idx) => (
-                          <li key={idx} className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button variant="hero" onClick={() => handleApply(opportunity)}>
-                      Submit Application
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </motion.div>
-          ))}
-        </div>
-
-        {filteredOpportunities.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No opportunities found matching your criteria
-            </p>
-          </div>
-        )}
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Apply Dialog */}
+      <ApplyDialog
+        open={applyDialogOpen}
+        onOpenChange={setApplyDialogOpen}
+        request={selectedRequest}
+        talentId={selectedTalentId || ""}
+      />
     </DashboardLayout>
   );
 };
