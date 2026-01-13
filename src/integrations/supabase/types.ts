@@ -246,7 +246,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_use_talent: {
+        Args: { _talent_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       request_status:
