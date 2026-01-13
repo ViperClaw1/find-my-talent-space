@@ -16,12 +16,13 @@ interface TalentSearchSectionProps {
   onSelectTalent: (talent: Talent | null) => void;
 }
 
+// Using placeholder UUIDs for mock data - these would come from a real talents table
 const mockTalents: Talent[] = [
-  { id: "1", name: "Alex Johnson", category: "DJ", rating: 4.9, avatar: "AJ" },
-  { id: "2", name: "Maria Garcia", category: "Photographer", rating: 4.8, avatar: "MG" },
-  { id: "3", name: "David Chen", category: "Live Band", rating: 4.7, avatar: "DC" },
-  { id: "4", name: "Sarah Williams", category: "Makeup Artist", rating: 5.0, avatar: "SW" },
-  { id: "5", name: "Michael Brown", category: "Chef", rating: 4.6, avatar: "MB" },
+  { id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890", name: "Alex Johnson", category: "DJ", rating: 4.9, avatar: "AJ" },
+  { id: "b2c3d4e5-f6a7-8901-bcde-f12345678901", name: "Maria Garcia", category: "Photographer", rating: 4.8, avatar: "MG" },
+  { id: "c3d4e5f6-a7b8-9012-cdef-123456789012", name: "David Chen", category: "Live Band", rating: 4.7, avatar: "DC" },
+  { id: "d4e5f6a7-b8c9-0123-defa-234567890123", name: "Sarah Williams", category: "Makeup Artist", rating: 5.0, avatar: "SW" },
+  { id: "e5f6a7b8-c9d0-1234-efab-345678901234", name: "Michael Brown", category: "Chef", rating: 4.6, avatar: "MB" },
 ];
 
 const TalentSearchSection = ({ selectedTalent, onSelectTalent }: TalentSearchSectionProps) => {
