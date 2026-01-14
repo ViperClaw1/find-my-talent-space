@@ -5,11 +5,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, MapPin, Calendar, DollarSign, Loader2, FileText } from "lucide-react";
+import { Users, Clock, MapPin, Calendar, DollarSign, Loader2, FileText, CreditCard } from "lucide-react";
 import { useMyApplications } from "@/hooks/useApplications";
 import { useTalent } from "@/hooks/useTalents";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { PayToConfirmDialog } from "@/components/application/PayToConfirmDialog";
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "Flexible";
@@ -21,29 +22,53 @@ const formatDate = (dateString: string | null) => {
 };
 
 const getStatusBadge = (status: string) => {
-  const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className: string }> = {
-    pending: { variant: "secondary", className: "bg-amber-100 text-amber-700" },
-    accepted: { variant: "default", className: "bg-green-100 text-green-700" },
-    rejected: { variant: "destructive", className: "bg-red-100 text-red-700" },
+  const variants: Record<string, { className: string; label: string }> = {
+    pending: { className: "bg-amber-100 text-amber-700", label: "Pending" },
+    approved: { className: "bg-blue-100 text-blue-700", label: "Approved - Pay to Confirm" },
+    accepted: { className: "bg-green-100 text-green-700", label: "Confirmed" },
+    rejected: { className: "bg-red-100 text-red-700", label: "Rejected" },
   };
 
-  const config = variants[status] || { variant: "secondary", className: "" };
+  const config = variants[status] || { className: "", label: status };
 
   return (
     <Badge className={`capitalize ${config.className}`}>
-      {status}
+      {config.label}
     </Badge>
   );
 };
 
+// Extract tier_id and slot_index from message
+const extractSlotInfo = (message: string | null) => {
+  if (!message) return { tierId: null, slotIndex: null, selectedSlot: null };
+  
+  // Try to extract slot info from message like "Selected slot: 09:00 - 10:00"
+  const slotMatch = message.match(/Selected slot: (.+?)(?:\||$)/);
+  const selectedSlot = slotMatch ? slotMatch[1].trim() : null;
+  
+  // For slot-index based: "slot-0", "slot-1", etc.
+  const slotIndexMatch = message.match(/slot-(\d+)/i);
+  const slotIndex = slotIndexMatch ? parseInt(slotIndexMatch[1]) : null;
+  
+  // For tier-based: look for tier id pattern
+  const tierMatch = message.match(/tier[_-]?(\w+)/i);
+  const tierId = tierMatch ? tierMatch[0] : null;
+  
+  return { tierId, slotIndex, selectedSlot };
+};
+
 interface ApplicationCardProps {
   application: any;
+  onPayToConfirm?: (application: any) => void;
 }
 
-const ApplicationCard = ({ application }: ApplicationCardProps) => {
+const ApplicationCard = ({ application, onPayToConfirm }: ApplicationCardProps) => {
   const request = application.requests;
   
   if (!request) return null;
+
+  const isApproved = application.status === "approved";
+  const { selectedSlot } = extractSlotInfo(application.message);
 
   return (
     <motion.div
@@ -84,11 +109,21 @@ const ApplicationCard = ({ application }: ApplicationCardProps) => {
           </div>
           
           {application.message && (
-            <div className="bg-muted/50 rounded-lg p-3 mt-2">
+            <div className="bg-muted/50 rounded-lg p-3 mt-2 mb-3">
               <p className="text-sm text-muted-foreground">
                 <span className="font-medium">Your message:</span> {application.message}
               </p>
             </div>
+          )}
+
+          {isApproved && onPayToConfirm && (
+            <Button 
+              onClick={() => onPayToConfirm(application)}
+              className="w-full"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Pay to Confirm
+            </Button>
           )}
         </CardContent>
       </Card>
@@ -99,11 +134,18 @@ const ApplicationCard = ({ application }: ApplicationCardProps) => {
 const MyApplications = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("talent");
   const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const { user } = useAuth();
   
   const { data: selectedTalent } = useTalent(selectedTalentId);
   const { data: openApplications = [], isLoading: loadingOpen } = useMyApplications(selectedTalentId, "open");
   const { data: timeSlotApplications = [], isLoading: loadingTimeSlot } = useMyApplications(selectedTalentId, "time-slot");
+
+  const handlePayToConfirm = (application: any) => {
+    setSelectedApplication(application);
+    setPayDialogOpen(true);
+  };
 
   const renderEmptyState = (icon: React.ReactNode, message: string) => (
     <Card>
@@ -122,6 +164,8 @@ const MyApplications = () => {
       </CardContent>
     </Card>
   );
+
+  const slotInfo = selectedApplication ? extractSlotInfo(selectedApplication.message) : null;
 
   return (
     <DashboardLayout 
@@ -183,7 +227,11 @@ const MyApplications = () => {
                 )
               ) : (
                 openApplications.map((application) => (
-                  <ApplicationCard key={application.id} application={application} />
+                  <ApplicationCard 
+                    key={application.id} 
+                    application={application}
+                    onPayToConfirm={handlePayToConfirm}
+                  />
                 ))
               )}
             </TabsContent>
@@ -198,13 +246,33 @@ const MyApplications = () => {
                 )
               ) : (
                 timeSlotApplications.map((application) => (
-                  <ApplicationCard key={application.id} application={application} />
+                  <ApplicationCard 
+                    key={application.id} 
+                    application={application}
+                    onPayToConfirm={handlePayToConfirm}
+                  />
                 ))
               )}
             </TabsContent>
           </Tabs>
         )}
       </div>
+
+      {selectedApplication && (
+        <PayToConfirmDialog
+          open={payDialogOpen}
+          onOpenChange={setPayDialogOpen}
+          applicationId={selectedApplication.id}
+          requestId={selectedApplication.request_id}
+          serviceCategory={selectedApplication.requests?.service_category || ""}
+          eventTitle={selectedApplication.requests?.event_title}
+          offeredAmount={Number(selectedApplication.requests?.offered_amount || 0)}
+          selectedSlot={slotInfo?.selectedSlot || undefined}
+          isTimeSlot={selectedApplication.requests?.request_type === "time-slot"}
+          tierId={slotInfo?.tierId}
+          slotIndex={slotInfo?.slotIndex}
+        />
+      )}
     </DashboardLayout>
   );
 };

@@ -3,16 +3,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useRequestApplications, useAcceptApplication, useRejectApplication } from "@/hooks/useApplications";
+import { useRequestApplications, useAcceptApplication, useRejectApplication, useApproveTimeSlotApplication } from "@/hooks/useApplications";
 import { Loader2, Star, Check, X } from "lucide-react";
 import { AcceptApplicationDialog } from "./AcceptApplicationDialog";
 
 interface ApplicationsListProps {
   requestId: string;
   offeredAmount: number;
+  requestType?: string;
 }
 
-export const ApplicationsList = ({ requestId, offeredAmount }: ApplicationsListProps) => {
+export const ApplicationsList = ({ requestId, offeredAmount, requestType }: ApplicationsListProps) => {
   const { data: applications = [], isLoading } = useRequestApplications(requestId);
   const [selectedApplication, setSelectedApplication] = useState<{
     id: string;
@@ -20,9 +21,36 @@ export const ApplicationsList = ({ requestId, offeredAmount }: ApplicationsListP
   } | null>(null);
 
   const rejectMutation = useRejectApplication();
+  const approveMutation = useApproveTimeSlotApplication();
 
   const handleReject = (applicationId: string) => {
     rejectMutation.mutate({ applicationId, requestId });
+  };
+
+  const handleApprove = (applicationId: string) => {
+    approveMutation.mutate({ applicationId, requestId });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, string> = {
+      pending: "bg-amber-100 text-amber-700",
+      approved: "bg-blue-100 text-blue-700",
+      accepted: "bg-green-100 text-green-700",
+      rejected: "bg-red-100 text-red-700",
+    };
+
+    const labels: Record<string, string> = {
+      pending: "Pending",
+      approved: "Waiting Payment",
+      accepted: "Confirmed",
+      rejected: "Rejected",
+    };
+
+    return (
+      <Badge className={`capitalize ${variants[status] || ""}`}>
+        {labels[status] || status}
+      </Badge>
+    );
   };
 
   if (isLoading) {
@@ -40,6 +68,8 @@ export const ApplicationsList = ({ requestId, offeredAmount }: ApplicationsListP
       </div>
     );
   }
+
+  const isTimeSlot = requestType === "time-slot";
 
   return (
     <div className="space-y-3">
@@ -78,24 +108,31 @@ export const ApplicationsList = ({ requestId, offeredAmount }: ApplicationsListP
                     >
                       <X className="w-4 h-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setSelectedApplication({
-                        id: application.id,
-                        talentName: application.talents.name,
-                      })}
-                    >
-                      <Check className="w-4 h-4 mr-1" />
-                      Accept
-                    </Button>
+                    {isTimeSlot ? (
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(application.id)}
+                        disabled={approveMutation.isPending}
+                      >
+                        {approveMutation.isPending && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                        <Check className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedApplication({
+                          id: application.id,
+                          talentName: application.talents.name,
+                        })}
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Accept
+                      </Button>
+                    )}
                   </>
                 ) : (
-                  <Badge
-                    variant={application.status === "accepted" ? "default" : "destructive"}
-                    className="capitalize"
-                  >
-                    {application.status}
-                  </Badge>
+                  getStatusBadge(application.status)
                 )}
               </div>
             </div>

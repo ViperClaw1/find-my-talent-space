@@ -40,6 +40,10 @@ const DashboardLayout = ({
     icon: Send,
     href: "/dashboard/requests"
   }, {
+    name: "My Events",
+    icon: Clock,
+    href: "/dashboard/events"
+  }, {
     name: "Browse Talents",
     icon: Search,
     href: "/dashboard/talents"

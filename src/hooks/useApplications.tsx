@@ -254,6 +254,117 @@ export const useRejectApplication = () => {
   });
 };
 
+// Hook for clients to approve time-slot application (no popup, just update status)
+export const useApproveTimeSlotApplication = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ applicationId, requestId }: { applicationId: string; requestId: string }) => {
+      const { error } = await supabase
+        .from("applications")
+        .update({ status: "approved" })
+        .eq("id", applicationId);
+
+      if (error) throw error;
+      return { applicationId, requestId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["request-applications", data.requestId] });
+      queryClient.invalidateQueries({ queryKey: ["my-applications"] });
+      toast.success("Application approved! Waiting for talent to confirm payment.");
+    },
+    onError: (error) => {
+      toast.error("Failed to approve application", { description: error.message });
+    },
+  });
+};
+
+// Hook for talents to confirm payment after approval
+export const useConfirmPayment = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ 
+      applicationId, 
+      requestId,
+      tierId,
+      slotIndex,
+    }: { 
+      applicationId: string; 
+      requestId: string;
+      tierId?: string | null;
+      slotIndex?: number | null;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Update application status to accepted (confirmed)
+      const { error: appError } = await supabase
+        .from("applications")
+        .update({ status: "accepted" })
+        .eq("id", applicationId);
+
+      if (appError) throw appError;
+
+      // Get the application to find talent_id
+      const { data: application, error: fetchAppError } = await supabase
+        .from("applications")
+        .select("talent_id")
+        .eq("id", applicationId)
+        .single();
+
+      if (fetchAppError) throw fetchAppError;
+
+      // Create a reservation record to track slot availability
+      if (tierId !== undefined || slotIndex !== undefined) {
+        const { error: resError } = await supabase
+          .from("time_slot_reservations")
+          .insert({
+            request_id: requestId,
+            tier_id: tierId || null,
+            slot_index: slotIndex ?? null,
+            talent_id: application.talent_id,
+            status: "confirmed",
+          });
+
+        if (resError) throw resError;
+      }
+
+      // Decrement talents_needed on the request for non-time-slot requests
+      const { data: request, error: reqFetchError } = await supabase
+        .from("requests")
+        .select("talents_needed, request_type, time_type, tiers")
+        .eq("id", requestId)
+        .single();
+
+      if (reqFetchError) throw reqFetchError;
+
+      if (request.request_type !== "time-slot") {
+        const newTalentsNeeded = Math.max(0, (request.talents_needed || 1) - 1);
+        const { error: reqUpdateError } = await supabase
+          .from("requests")
+          .update({ talents_needed: newTalentsNeeded })
+          .eq("id", requestId);
+
+        if (reqUpdateError) throw reqUpdateError;
+      }
+
+      return { applicationId, requestId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["request-applications", data.requestId] });
+      queryClient.invalidateQueries({ queryKey: ["my-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["my-confirmed-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+      queryClient.invalidateQueries({ queryKey: ["time-slot-reservations"] });
+      toast.success("Payment confirmed! Booking is now active.");
+    },
+    onError: (error) => {
+      toast.error("Failed to confirm payment", { description: error.message });
+    },
+  });
+};
+
 export const useOpenRequests = () => {
   const { user } = useAuth();
 

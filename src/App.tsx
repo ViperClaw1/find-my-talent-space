@@ -10,6 +10,7 @@ import BrowseOpportunities from "./pages/BrowseOpportunities";
 import MyRequests from "./pages/MyRequests";
 import MyApplications from "./pages/MyApplications";
 import TalentRequests from "./pages/TalentRequests";
+import MyEvents from "./pages/MyEvents";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/dashboard/requests" element={<MyRequests />} />
             <Route path="/dashboard/applications" element={<MyApplications />} />
             <Route path="/dashboard/talent-requests" element={<TalentRequests />} />
+            <Route path="/dashboard/events" element={<MyEvents />} />
             <Route path="/dashboard/talents" element={<Dashboard />} />
             <Route path="/dashboard/bookings" element={<Dashboard />} />
             <Route path="/dashboard/profile" element={<Dashboard />} />
