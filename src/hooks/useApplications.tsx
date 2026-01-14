@@ -330,3 +330,92 @@ export const useApplicationCount = (requestId: string) => {
     },
   });
 };
+
+// Hook to create a time-slot reservation (instant booking)
+export const useCreateTimeSlotReservation = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      parentRequestId,
+      talentId,
+      talentName,
+      selectedSlot,
+      offeredAmount,
+      serviceCategory,
+      eventTitle,
+    }: {
+      parentRequestId: string;
+      talentId: string;
+      talentName: string;
+      selectedSlot: { startTime: string; endTime: string; label: string };
+      offeredAmount: number;
+      serviceCategory: string;
+      eventTitle: string | null;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Get the parent request to copy relevant fields
+      const { data: parentRequest, error: fetchError } = await supabase
+        .from("requests")
+        .select("*")
+        .eq("id", parentRequestId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Create a new direct request representing the reservation
+      const { data, error } = await supabase
+        .from("requests")
+        .insert({
+          user_id: parentRequest.user_id,
+          request_type: "direct",
+          status: "accepted",
+          talent_id: talentId,
+          talent_name: talentName,
+          service_category: serviceCategory,
+          service_type: parentRequest.service_type,
+          offered_amount: offeredAmount,
+          service_fee: offeredAmount * 0.1,
+          total_amount: offeredAmount * 1.1,
+          event_title: eventTitle,
+          start_date: parentRequest.start_date,
+          end_date: parentRequest.end_date,
+          fixed_start_time: selectedSlot.startTime,
+          fixed_end_time: selectedSlot.endTime,
+          city: parentRequest.city,
+          location_name: parentRequest.location_name,
+          address: parentRequest.address,
+          is_virtual: parentRequest.is_virtual,
+          venue_tbd: parentRequest.venue_tbd,
+          special_notes: `Reserved from time-slot request. Slot: ${selectedSlot.label}`,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Also create an application record for tracking
+      await supabase
+        .from("applications")
+        .insert({
+          request_id: parentRequestId,
+          talent_id: talentId,
+          status: "accepted",
+          message: `Reserved slot: ${selectedSlot.label}`,
+        });
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["requests"] });
+      queryClient.invalidateQueries({ queryKey: ["time-slot-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["my-applications"] });
+      toast.success("Time slot reserved successfully!");
+    },
+    onError: (error) => {
+      toast.error("Failed to reserve time slot", { description: error.message });
+    },
+  });
+};
