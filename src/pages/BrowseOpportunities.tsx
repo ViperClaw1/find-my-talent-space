@@ -57,12 +57,8 @@ const OpenOpportunityCard = ({ request, onApply, selectedTalentId }: Opportunity
       </div>
 
       <h3 className="text-xl font-semibold mb-2">{request.service_category}</h3>
-      {request.service_type && (
-        <p className="text-sm text-muted-foreground mb-1">{request.service_type}</p>
-      )}
-      {request.event_title && (
-        <p className="text-sm text-muted-foreground mb-4">{request.event_title}</p>
-      )}
+      {request.service_type && <p className="text-sm text-muted-foreground mb-1">{request.service_type}</p>}
+      {request.event_title && <p className="text-sm text-muted-foreground mb-4">{request.event_title}</p>}
 
       <div className="grid grid-cols-2 gap-3 text-sm mb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -132,9 +128,9 @@ const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlo
       onClick={() => navigate(`/dashboard/request/${request.id}`)}
     >
       <div className="flex items-start justify-between mb-4">
-        <Badge variant="outline" className="capitalize">
+        {/* <Badge variant="outline" className="capitalize">
           {isReserveMode ? "Reserve Booking Type" : "Apply Booking Type"}
-        </Badge>
+        </Badge> */}
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Budget</p>
           <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
@@ -142,12 +138,8 @@ const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlo
       </div>
 
       <h3 className="text-xl font-semibold mb-2">{request.service_category}</h3>
-      {request.service_type && (
-        <p className="text-sm text-muted-foreground mb-1">{request.service_type}</p>
-      )}
-      {request.event_title && (
-        <p className="text-sm text-muted-foreground mb-4">{request.event_title}</p>
-      )}
+      {request.service_type && <p className="text-sm text-muted-foreground mb-1">{request.service_type}</p>}
+      {request.event_title && <p className="text-sm text-muted-foreground mb-4">{request.event_title}</p>}
 
       <div className="grid grid-cols-2 gap-3 text-sm mb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
