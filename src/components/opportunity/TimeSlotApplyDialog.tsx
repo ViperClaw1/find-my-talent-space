@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useApplyToRequest, useCreateTimeSlotReservation } from "@/hooks/useApplications";
+import { useTimeSlotReservations } from "@/hooks/useTimeSlotReservations";
 import { Loader2, Clock, ArrowRight, Check } from "lucide-react";
 
 interface Tier {
@@ -49,6 +50,8 @@ interface TimeSlot {
   endTime: string;
   label: string;
   available: boolean;
+  tierId?: string;
+  slotIndex?: number;
 }
 
 export const TimeSlotApplyDialog = ({ 
@@ -65,22 +68,30 @@ export const TimeSlotApplyDialog = ({
   
   const applyMutation = useApplyToRequest();
   const reserveMutation = useCreateTimeSlotReservation();
+  
+  // Get current reservations to check availability
+  const { data: reservations = [] } = useTimeSlotReservations(request?.id || null);
 
-  // Generate time slots based on request config
+  // Generate time slots based on request config with availability check
   const timeSlots = useMemo<TimeSlot[]>(() => {
     if (!request) return [];
 
     // Custom tiers
     if (request.time_type === "tier" && request.tiers && Array.isArray(request.tiers)) {
-      return request.tiers
-        .filter((tier: Tier) => parseInt(tier.slots || "0") > 0)
-        .map((tier: Tier) => ({
+      return request.tiers.map((tier: Tier) => {
+        const totalSlots = parseInt(tier.slots || "0");
+        const tierReservations = reservations.filter(r => r.tier_id === tier.id);
+        const availableSlots = totalSlots - tierReservations.length;
+        
+        return {
           id: tier.id,
           startTime: tier.startTime,
           endTime: tier.endTime,
-          label: `${tier.startTime} - ${tier.endTime}`,
-          available: parseInt(tier.slots || "0") > 0,
-        }));
+          label: `${tier.startTime} - ${tier.endTime} (${availableSlots} slots left)`,
+          available: availableSlots > 0,
+          tierId: tier.id,
+        };
+      });
     }
 
     // Fixed slots - divide time range equally
@@ -104,19 +115,22 @@ export const TimeSlotApplyDialog = ({
           return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
         };
 
+        const isReserved = reservations.some(r => r.slot_index === i);
+
         slots.push({
           id: `slot-${i}`,
           startTime: formatTime(slotStart),
           endTime: formatTime(slotEnd),
           label: `${formatTime(slotStart)} - ${formatTime(slotEnd)}`,
-          available: true,
+          available: !isReserved,
+          slotIndex: i,
         });
       }
       return slots;
     }
 
     return [];
-  }, [request]);
+  }, [request, reservations]);
 
   const selectedSlotData = timeSlots.find(s => s.id === selectedSlot);
   const isReserveMode = request?.booking_mode === "reserve";

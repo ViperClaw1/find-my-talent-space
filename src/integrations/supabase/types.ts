@@ -83,7 +83,10 @@ export type Database = {
           meeting_url: string | null
           offered_amount: number
           other_talents: string | null
+          parent_request_id: string | null
           request_type: Database["public"]["Enums"]["request_type"]
+          selected_slot_index: number | null
+          selected_tier_id: string | null
           service_category: string
           service_fee: number | null
           service_listing: string | null
@@ -126,7 +129,10 @@ export type Database = {
           meeting_url?: string | null
           offered_amount: number
           other_talents?: string | null
+          parent_request_id?: string | null
           request_type: Database["public"]["Enums"]["request_type"]
+          selected_slot_index?: number | null
+          selected_tier_id?: string | null
           service_category: string
           service_fee?: number | null
           service_listing?: string | null
@@ -169,7 +175,10 @@ export type Database = {
           meeting_url?: string | null
           offered_amount?: number
           other_talents?: string | null
+          parent_request_id?: string | null
           request_type?: Database["public"]["Enums"]["request_type"]
+          selected_slot_index?: number | null
+          selected_tier_id?: string | null
           service_category?: string
           service_fee?: number | null
           service_listing?: string | null
@@ -195,6 +204,13 @@ export type Database = {
             columns: ["talent_id"]
             isOneToOne: false
             referencedRelation: "talents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requests_parent_request_id_fkey"
+            columns: ["parent_request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
             referencedColumns: ["id"]
           },
         ]
@@ -240,6 +256,54 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      time_slot_reservations: {
+        Row: {
+          created_at: string
+          id: string
+          request_id: string
+          slot_index: number | null
+          status: string
+          talent_id: string
+          tier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_id: string
+          slot_index?: number | null
+          status?: string
+          talent_id: string
+          tier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_id?: string
+          slot_index?: number | null
+          status?: string
+          talent_id?: string
+          tier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_slot_reservations_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_slot_reservations_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

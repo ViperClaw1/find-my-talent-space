@@ -52,7 +52,8 @@ export const TimeSlotRequestCard = ({ request }: TimeSlotRequestCardProps) => {
         <CollapsibleContent className="mt-4">
           <ApplicationsList 
             requestId={request.id} 
-            offeredAmount={Number(request.offered_amount)} 
+            offeredAmount={Number(request.offered_amount)}
+            requestType="time-slot"
           />
         </CollapsibleContent>
       </RequestDetailsCard>
