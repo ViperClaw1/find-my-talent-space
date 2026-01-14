@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useOpenRequests, useTimeSlotRequests, useHasApplied } from "@/hooks/useApplications";
 import { useMyTalentProfiles, useTalent } from "@/hooks/useTalents";
 import { ApplyDialog } from "@/components/opportunity/ApplyDialog";
+import { TimeSlotApplyDialog } from "@/components/opportunity/TimeSlotApplyDialog";
 import { format } from "date-fns";
 
 const formatDate = (dateString: string | null) => {
@@ -27,7 +28,7 @@ interface OpportunityCardProps {
   selectedTalentId: string | null;
 }
 
-const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCardProps) => {
+const OpenOpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCardProps) => {
   const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
 
   return (
@@ -38,10 +39,8 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
       className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
     >
       <div className="flex items-start justify-between mb-4">
-        <Badge
-          className={request.request_type === "open" ? "bg-amber-100 text-amber-700" : "bg-purple-100 text-purple-700"}
-        >
-          {request.request_type === "open" ? "Open Request" : "Time Slot"}
+        <Badge className="bg-amber-100 text-amber-700">
+          Open Request
         </Badge>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Budget</p>
@@ -65,12 +64,6 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
           <Users className="w-4 h-4" />
           <span>{request.talents_needed || 1} talent(s) needed</span>
         </div>
-        {request.request_type === "time-slot" && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span>{request.fixed_slots || 0} slots</span>
-          </div>
-        )}
       </div>
 
       {request.special_notes && (
@@ -89,6 +82,78 @@ const OpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCard
   );
 };
 
+interface TimeSlotOpportunityCardProps {
+  request: any;
+  onApply: () => void;
+  selectedTalentId: string | null;
+}
+
+const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlotOpportunityCardProps) => {
+  const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
+  const isReserveMode = request.booking_mode === "reserve";
+
+  const getButtonText = () => {
+    if (!selectedTalentId) return "Select a talent profile";
+    if (hasApplied) return isReserveMode ? "Already Reserved" : "Already Applied";
+    return isReserveMode ? "Reserve Now" : "Apply Now";
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex gap-2">
+          <Badge className="bg-purple-100 text-purple-700">
+            Time Slot
+          </Badge>
+          <Badge variant="outline" className="capitalize">
+            {isReserveMode ? "Instant" : "Approval"}
+          </Badge>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">Budget</p>
+          <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
+        </div>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-2">{request.event_title || request.service_category}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{request.service_category}</p>
+
+      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4" />
+          <span>{request.is_virtual ? "Virtual" : request.city || "Location TBD"}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="w-4 h-4" />
+          <span>{formatDate(request.start_date)}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock className="w-4 h-4" />
+          <span>{request.time_type === "tier" ? "Custom Tiers" : `${request.fixed_slots || 0} slots`}</span>
+        </div>
+      </div>
+
+      {request.special_notes && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{request.special_notes}</p>
+      )}
+
+      <Button
+        className="w-full"
+        onClick={onApply}
+        disabled={!selectedTalentId || hasApplied}
+        variant={hasApplied ? "outline" : isReserveMode ? "hero" : "default"}
+      >
+        {getButtonText()}
+      </Button>
+    </motion.div>
+  );
+};
+
 const BrowseOpportunities = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("talent");
   const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
@@ -96,6 +161,7 @@ const BrowseOpportunities = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
+  const [timeSlotDialogOpen, setTimeSlotDialogOpen] = useState(false);
 
   // Get selected talent's category to filter opportunities
   const { data: selectedTalent } = useTalent(selectedTalentId);
@@ -117,9 +183,14 @@ const BrowseOpportunities = () => {
   const filteredOpenRequests = filterRequests(openRequests);
   const filteredTimeSlotRequests = filterRequests(timeSlotRequests);
 
-  const handleApply = (request: any) => {
+  const handleApplyOpen = (request: any) => {
     setSelectedRequest(request);
     setApplyDialogOpen(true);
+  };
+
+  const handleApplyTimeSlot = (request: any) => {
+    setSelectedRequest(request);
+    setTimeSlotDialogOpen(true);
   };
 
   const renderLoading = () => (
@@ -202,10 +273,10 @@ const BrowseOpportunities = () => {
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
                 {filteredOpenRequests.map((request) => (
-                  <OpportunityCard
+                  <OpenOpportunityCard
                     key={request.id}
                     request={request}
-                    onApply={() => handleApply(request)}
+                    onApply={() => handleApplyOpen(request)}
                     selectedTalentId={selectedTalentId}
                   />
                 ))}
@@ -221,10 +292,10 @@ const BrowseOpportunities = () => {
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
                 {filteredTimeSlotRequests.map((request) => (
-                  <OpportunityCard
+                  <TimeSlotOpportunityCard
                     key={request.id}
                     request={request}
-                    onApply={() => handleApply(request)}
+                    onApply={() => handleApplyTimeSlot(request)}
                     selectedTalentId={selectedTalentId}
                   />
                 ))}
@@ -234,12 +305,21 @@ const BrowseOpportunities = () => {
         </Tabs>
       </div>
 
-      {/* Apply Dialog */}
+      {/* Apply Dialog for Open Requests */}
       <ApplyDialog
         open={applyDialogOpen}
         onOpenChange={setApplyDialogOpen}
         request={selectedRequest}
         talentId={selectedTalentId || ""}
+      />
+
+      {/* Time Slot Apply Dialog */}
+      <TimeSlotApplyDialog
+        open={timeSlotDialogOpen}
+        onOpenChange={setTimeSlotDialogOpen}
+        request={selectedRequest}
+        talentId={selectedTalentId || ""}
+        talentName={selectedTalent?.name}
       />
     </DashboardLayout>
   );
