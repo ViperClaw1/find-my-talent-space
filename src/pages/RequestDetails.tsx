@@ -6,7 +6,6 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
   Calendar,
@@ -25,6 +24,14 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useTimeSlotReservations } from "@/hooks/useTimeSlotReservations";
 
+/* =======================
+   Types
+======================= */
+
+type Tier = {
+  slots: number | string;
+};
+
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return null;
   try {
@@ -32,10 +39,6 @@ const formatDate = (dateString: string | null | undefined) => {
   } catch {
     return dateString;
   }
-};
-
-const formatTime = (timeString: string | null | undefined) => {
-  return timeString || null;
 };
 
 const getStatusBadge = (status: string) => {
@@ -59,6 +62,7 @@ const RequestDetails = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [userRole, setUserRole] = useState<"client" | "talent">("client");
   const [selectedTalentId, setSelectedTalentId] = useState<string | null>(null);
 
@@ -66,13 +70,9 @@ const RequestDetails = () => {
     queryKey: ["request-details", requestId],
     queryFn: async () => {
       if (!requestId) return null;
-      
-      const { data, error } = await supabase
-        .from("requests")
-        .select("*")
-        .eq("id", requestId)
-        .maybeSingle();
-      
+
+      const { data, error } = await supabase.from("requests").select("*").eq("id", requestId).maybeSingle();
+
       if (error) throw error;
       return data;
     },
@@ -80,8 +80,6 @@ const RequestDetails = () => {
   });
 
   const { data: reservations = [] } = useTimeSlotReservations(requestId || null);
-
-  const isOwner = user?.id === request?.user_id;
 
   const getLocationDisplay = () => {
     if (!request) return "Location TBD";
@@ -93,24 +91,39 @@ const RequestDetails = () => {
     return "Location TBD";
   };
 
-  // Calculate slot stats for time-slot requests
+  /* =======================
+     Slot Stats (FIXED)
+  ======================= */
+
   const getSlotStats = () => {
     if (!request || request.request_type !== "time-slot") return null;
-    
+
     let totalSlots = 0;
+
     if (request.time_type === "tier" && request.tiers) {
-      const tiers = Array.isArray(request.tiers) ? request.tiers : [];
-      totalSlots = tiers.reduce((sum: number, tier: any) => sum + (parseInt(String(tier.slots)) || 0), 0);
+      const tiersArray: Tier[] = Array.isArray(request.tiers)
+        ? (request.tiers as Tier[])
+        : Object.values(request.tiers as Record<string, Tier>);
+
+      totalSlots = tiersArray.reduce((sum, tier) => {
+        const slots = Number(tier?.slots || 0);
+        return sum + slots;
+      }, 0);
     } else if (request.fixed_slots) {
       totalSlots = Number(request.fixed_slots) || 0;
     }
 
     const reservedSlots = reservations.length;
     const availableSlots = Math.max(0, totalSlots - reservedSlots);
+
     return { totalSlots, availableSlots, reservedSlots };
   };
 
   const slotStats = getSlotStats();
+
+  /* =======================
+     Loading / Not found
+  ======================= */
 
   if (isLoading) {
     return (
@@ -121,7 +134,7 @@ const RequestDetails = () => {
         onSelectTalent={setSelectedTalentId}
       >
         <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-muted-foreground mb-4 animate-spin" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-4" />
           <p className="text-muted-foreground">Loading request details...</p>
         </div>
       </DashboardLayout>
@@ -147,6 +160,10 @@ const RequestDetails = () => {
     );
   }
 
+  /* =======================
+     Render
+  ======================= */
+
   return (
     <DashboardLayout
       userRole={userRole}
@@ -161,16 +178,14 @@ const RequestDetails = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold font-display">{request.service_category}</h1>
-              {request.service_type && (
-                <p className="text-muted-foreground">{request.service_type}</p>
-              )}
-              {request.event_title && (
-                <p className="text-sm text-muted-foreground mt-1">{request.event_title}</p>
-              )}
+              <h1 className="text-2xl font-bold">{request.service_category}</h1>
+              {request.service_type && <p className="text-muted-foreground">{request.service_type}</p>}
+              {request.event_title && <p className="text-sm text-muted-foreground mt-1">{request.event_title}</p>}
             </div>
+
             <div className="flex items-center gap-2">
               {getStatusBadge(request.status)}
               <Badge variant="outline" className="capitalize">
@@ -181,10 +196,10 @@ const RequestDetails = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Main Details */}
+          {/* Service Details */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Briefcase className="w-5 h-5" />
                 Service Details
               </CardTitle>
@@ -197,6 +212,7 @@ const RequestDetails = () => {
                   <p className="font-medium">{request.service_category}</p>
                 </div>
               </div>
+
               {request.service_type && (
                 <div className="flex items-center gap-3">
                   <Briefcase className="w-4 h-4 text-muted-foreground" />
@@ -206,6 +222,7 @@ const RequestDetails = () => {
                   </div>
                 </div>
               )}
+
               <div className="flex items-center gap-3">
                 <DollarSign className="w-4 h-4 text-muted-foreground" />
                 <div>
@@ -213,6 +230,7 @@ const RequestDetails = () => {
                   <p className="font-medium text-lg">${Number(request.offered_amount).toFixed(2)}</p>
                 </div>
               </div>
+
               {request.request_type === "open" && request.talents_needed && (
                 <div className="flex items-center gap-3">
                   <Users className="w-4 h-4 text-muted-foreground" />
@@ -222,12 +240,15 @@ const RequestDetails = () => {
                   </div>
                 </div>
               )}
+
               {slotStats && (
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Slots Available</p>
-                    <p className="font-medium">{slotStats.availableSlots} / {slotStats.totalSlots}</p>
+                    <p className="font-medium">
+                      {slotStats.availableSlots} / {slotStats.totalSlots}
+                    </p>
                   </div>
                 </div>
               )}
@@ -237,7 +258,7 @@ const RequestDetails = () => {
           {/* Location & Time */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <MapPin className="w-5 h-5" />
                 Location & Time
               </CardTitle>
@@ -252,11 +273,10 @@ const RequestDetails = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Location</p>
                   <p className="font-medium">{getLocationDisplay()}</p>
-                  {request.address && (
-                    <p className="text-sm text-muted-foreground">{request.address}</p>
-                  )}
+                  {request.address && <p className="text-sm text-muted-foreground">{request.address}</p>}
                 </div>
               </div>
+
               <div className="flex items-center gap-3">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <div>
@@ -269,65 +289,27 @@ const RequestDetails = () => {
                   </p>
                 </div>
               </div>
+
               {(request.fixed_start_time || request.fixed_end_time) && (
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Time</p>
                     <p className="font-medium">
-                      {formatTime(request.fixed_start_time)}
-                      {request.fixed_end_time && <> - {formatTime(request.fixed_end_time)}</>}
+                      {request.fixed_start_time}
+                      {request.fixed_end_time && <> - {request.fixed_end_time}</>}
                     </p>
-                  </div>
-                </div>
-              )}
-              {request.location_category && (
-                <div className="flex items-center gap-3">
-                  <Tag className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Venue Type</p>
-                    <p className="font-medium">{request.location_category}</p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Talent Info (only for direct requests and if owner) */}
-          {request.request_type === "direct" && request.talent_name && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Talent
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium">{request.talent_name}</p>
-                  </div>
-                </div>
-                {request.talent_category && (
-                  <div className="flex items-center gap-3">
-                    <Tag className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Category</p>
-                      <p className="font-medium">{request.talent_category}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Time Slot Details (only for time-slot requests) */}
+          {/* Time Slot Details */}
           {request.request_type === "time-slot" && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Clock className="w-5 h-5" />
                   Booking Details
                 </CardTitle>
@@ -342,6 +324,7 @@ const RequestDetails = () => {
                     </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -351,6 +334,7 @@ const RequestDetails = () => {
                     </p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3">
                   <Globe className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -358,35 +342,6 @@ const RequestDetails = () => {
                     <p className="font-medium capitalize">{request.visibility || "Public"}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Additional Info */}
-          {(request.special_notes || request.admission_price || request.age_restriction) && (
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-lg">Additional Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {request.admission_price && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Admission Price</p>
-                    <p className="font-medium">{request.admission_price}</p>
-                  </div>
-                )}
-                {request.age_restriction && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Age Restriction</p>
-                    <p className="font-medium">{request.age_restriction}</p>
-                  </div>
-                )}
-                {request.special_notes && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Special Notes</p>
-                    <p className="font-medium">{request.special_notes}</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
