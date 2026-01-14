@@ -48,6 +48,17 @@ const EventSection = ({ formData, onChange, isRequired }: EventSectionProps) => 
         )}
       </div>
 
+      {/* Helper note for optional event section */}
+      {!isRequired && (
+        <div className="bg-muted/30 border border-border/50 rounded-xl p-4">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">💡 Not required:</span>{" "}
+            If this request is not part of a specific event, you can skip this section. 
+            Event details help talents understand the context better but are completely optional for direct and open requests.
+          </p>
+        </div>
+      )}
+
       <Tabs
         value={formData.eventTab}
         onValueChange={(value) => onChange("eventTab", value)}

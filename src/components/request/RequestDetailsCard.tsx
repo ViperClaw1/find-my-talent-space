@@ -111,13 +111,14 @@ export const RequestDetailsCard = ({ request, children }: RequestDetailsCardProp
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            {request.event_title && (
-              <CardTitle className="text-lg">{request.event_title}</CardTitle>
-            )}
-            {!request.event_title && (
-              <CardTitle className="text-lg">{request.service_category}</CardTitle>
+            <CardTitle className="text-lg">{request.service_category}</CardTitle>
+            {request.service_type && (
+              <span className="text-sm text-muted-foreground">• {request.service_type}</span>
             )}
           </div>
+          {request.event_title && (
+            <p className="text-sm text-muted-foreground">{request.event_title}</p>
+          )}
           {request.talent_name && (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <User className="w-3 h-3" />

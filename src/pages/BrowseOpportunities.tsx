@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Search, Filter, MapPin, Calendar, DollarSign, Users, Clock, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -29,27 +30,39 @@ interface OpportunityCardProps {
 }
 
 const OpenOpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCardProps) => {
+  const navigate = useNavigate();
   const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
+
+  const handleClick = () => {
+    if (hasApplied) {
+      navigate("/dashboard/applications");
+    } else {
+      onApply();
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
+      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all cursor-pointer"
+      onClick={() => navigate(`/dashboard/request/${request.id}`)}
     >
       <div className="flex items-start justify-between mb-4">
-        <Badge className="bg-amber-100 text-amber-700">
-          Open Request
-        </Badge>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Budget</p>
           <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold mb-2">{request.event_title || request.service_category}</h3>
-      <p className="text-sm text-muted-foreground mb-4">{request.service_category}</p>
+      <h3 className="text-xl font-semibold mb-2">{request.service_category}</h3>
+      {request.service_type && (
+        <p className="text-sm text-muted-foreground mb-1">{request.service_type}</p>
+      )}
+      {request.event_title && (
+        <p className="text-sm text-muted-foreground mb-4">{request.event_title}</p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 text-sm mb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -72,11 +85,14 @@ const OpenOpportunityCard = ({ request, onApply, selectedTalentId }: Opportunity
 
       <Button
         className="w-full"
-        onClick={onApply}
-        disabled={!selectedTalentId || hasApplied}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClick();
+        }}
+        disabled={!selectedTalentId}
         variant={hasApplied ? "outline" : "default"}
       >
-        {!selectedTalentId ? "Select a talent profile to apply" : hasApplied ? "Already Applied" : "Apply Now"}
+        {!selectedTalentId ? "Select a talent profile to apply" : hasApplied ? "Applied" : "Apply Now"}
       </Button>
     </motion.div>
   );
@@ -89,13 +105,22 @@ interface TimeSlotOpportunityCardProps {
 }
 
 const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlotOpportunityCardProps) => {
+  const navigate = useNavigate();
   const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
   const isReserveMode = request.booking_mode === "reserve";
 
   const getButtonText = () => {
     if (!selectedTalentId) return "Select a talent profile";
-    if (hasApplied) return isReserveMode ? "Already Reserved" : "Already Applied";
+    if (hasApplied) return "Applied";
     return isReserveMode ? "Reserve Now" : "Apply Now";
+  };
+
+  const handleClick = () => {
+    if (hasApplied) {
+      navigate("/dashboard/applications");
+    } else {
+      onApply();
+    }
   };
 
   return (
@@ -103,25 +128,26 @@ const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlo
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
+      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all cursor-pointer"
+      onClick={() => navigate(`/dashboard/request/${request.id}`)}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="flex gap-2">
-          <Badge className="bg-purple-100 text-purple-700">
-            Time Slot
-          </Badge>
-          <Badge variant="outline" className="capitalize">
-            {isReserveMode ? "Instant" : "Approval"}
-          </Badge>
-        </div>
+        <Badge variant="outline" className="capitalize">
+          {isReserveMode ? "Reserve Booking Type" : "Apply Booking Type"}
+        </Badge>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Budget</p>
           <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold mb-2">{request.event_title || request.service_category}</h3>
-      <p className="text-sm text-muted-foreground mb-4">{request.service_category}</p>
+      <h3 className="text-xl font-semibold mb-2">{request.service_category}</h3>
+      {request.service_type && (
+        <p className="text-sm text-muted-foreground mb-1">{request.service_type}</p>
+      )}
+      {request.event_title && (
+        <p className="text-sm text-muted-foreground mb-4">{request.event_title}</p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 text-sm mb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -144,8 +170,11 @@ const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlo
 
       <Button
         className="w-full"
-        onClick={onApply}
-        disabled={!selectedTalentId || hasApplied}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClick();
+        }}
+        disabled={!selectedTalentId}
         variant={hasApplied ? "outline" : isReserveMode ? "hero" : "default"}
       >
         {getButtonText()}

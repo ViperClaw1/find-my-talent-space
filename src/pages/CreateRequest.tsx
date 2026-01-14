@@ -297,6 +297,8 @@ const CreateRequest = () => {
               setServiceData((prev) => ({ ...prev, [field]: value }))
             }
             showTalentsNeeded={requestType === "open"}
+            selectedTalentId={selectedTalent?.id}
+            requestType={requestType || undefined}
           />
         </div>
 
