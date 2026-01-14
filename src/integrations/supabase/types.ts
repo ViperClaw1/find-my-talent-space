@@ -215,6 +215,44 @@ export type Database = {
           },
         ]
       }
+      talent_service_listings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          price: number | null
+          talent_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          price?: number | null
+          talent_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number | null
+          talent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talent_service_listings_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       talents: {
         Row: {
           avatar_initials: string | null

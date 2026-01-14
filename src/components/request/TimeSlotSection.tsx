@@ -1,9 +1,123 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Lock, Globe, EyeOff } from "lucide-react";
+import { Plus, Trash2, Lock, Globe, EyeOff, Clock } from "lucide-react";
+
+// Helper to calculate fixed time slots
+const calculateFixedSlots = (startTime: string, endTime: string, numSlots: number) => {
+  if (!startTime || !endTime || numSlots < 1) return [];
+  
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+  
+  const startMinutes = startHour * 60 + startMinute;
+  const endMinutes = endHour * 60 + endMinute;
+  
+  if (endMinutes <= startMinutes) return [];
+  
+  const totalMinutes = endMinutes - startMinutes;
+  const slotDuration = totalMinutes / numSlots;
+  
+  const slots = [];
+  for (let i = 0; i < numSlots; i++) {
+    const slotStart = startMinutes + (i * slotDuration);
+    const slotEnd = slotStart + slotDuration;
+    
+    const formatTime = (mins: number) => {
+      const h = Math.floor(mins / 60);
+      const m = Math.round(mins % 60);
+      return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+    };
+    
+    slots.push({
+      start: formatTime(slotStart),
+      end: formatTime(slotEnd),
+    });
+  }
+  
+  return slots;
+};
+
+interface FixedSlotsSectionProps {
+  formData: {
+    fixedStartTime: string;
+    fixedEndTime: string;
+    fixedSlots: string;
+  };
+  onChange: (field: string, value: string) => void;
+}
+
+const FixedSlotsSection = ({ formData, onChange }: FixedSlotsSectionProps) => {
+  const calculatedSlots = useMemo(() => {
+    return calculateFixedSlots(
+      formData.fixedStartTime,
+      formData.fixedEndTime,
+      parseInt(formData.fixedSlots) || 0
+    );
+  }, [formData.fixedStartTime, formData.fixedEndTime, formData.fixedSlots]);
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="grid md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-xl">
+        <div className="space-y-2">
+          <Label htmlFor="fixedStartTime">Start Time</Label>
+          <Input
+            id="fixedStartTime"
+            type="time"
+            className="bg-background"
+            value={formData.fixedStartTime}
+            onChange={(e) => onChange("fixedStartTime", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="fixedEndTime">End Time</Label>
+          <Input
+            id="fixedEndTime"
+            type="time"
+            className="bg-background"
+            value={formData.fixedEndTime}
+            onChange={(e) => onChange("fixedEndTime", e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="fixedSlots">Number of Slots</Label>
+          <Input
+            id="fixedSlots"
+            type="number"
+            min="1"
+            className="bg-background"
+            value={formData.fixedSlots}
+            onChange={(e) => onChange("fixedSlots", e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Preview of calculated slots */}
+      {calculatedSlots.length > 0 && (
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Time Slots Preview</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {calculatedSlots.map((slot, index) => (
+              <Badge 
+                key={index} 
+                variant="outline" 
+                className="bg-background px-3 py-1"
+              >
+                {slot.start} - {slot.end}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface Tier {
   id: string;
@@ -186,39 +300,7 @@ const TimeSlotSection = ({ formData, onChange }: TimeSlotSectionProps) => {
         </RadioGroup>
 
         {formData.timeType === "fixed" && (
-          <div className="grid md:grid-cols-3 gap-4 mt-4 p-4 bg-muted/50 rounded-xl">
-            <div className="space-y-2">
-              <Label htmlFor="fixedStartTime">Start Time</Label>
-              <Input
-                id="fixedStartTime"
-                type="time"
-                className="bg-background"
-                value={formData.fixedStartTime}
-                onChange={(e) => onChange("fixedStartTime", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fixedEndTime">End Time</Label>
-              <Input
-                id="fixedEndTime"
-                type="time"
-                className="bg-background"
-                value={formData.fixedEndTime}
-                onChange={(e) => onChange("fixedEndTime", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fixedSlots">Number of Slots</Label>
-              <Input
-                id="fixedSlots"
-                type="number"
-                min="1"
-                className="bg-background"
-                value={formData.fixedSlots}
-                onChange={(e) => onChange("fixedSlots", e.target.value)}
-              />
-            </div>
-          </div>
+          <FixedSlotsSection formData={formData} onChange={onChange} />
         )}
 
         {formData.timeType === "tier" && (

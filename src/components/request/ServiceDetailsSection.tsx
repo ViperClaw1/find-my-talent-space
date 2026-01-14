@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTalentServiceListings } from "@/hooks/useTalentServiceListings";
 
 interface ServiceDetailsSectionProps {
   formData: {
@@ -18,6 +19,8 @@ interface ServiceDetailsSectionProps {
   };
   onChange: (field: string, value: string) => void;
   showTalentsNeeded?: boolean;
+  selectedTalentId?: string | null;
+  requestType?: "direct" | "open" | "time-slot";
 }
 
 const serviceCategories = [
@@ -42,7 +45,9 @@ const serviceTypes: Record<string, string[]> = {
   "Technology & IT": ["Developer", "Designer", "Consultant"],
 };
 
-const ServiceDetailsSection = ({ formData, onChange, showTalentsNeeded }: ServiceDetailsSectionProps) => {
+const ServiceDetailsSection = ({ formData, onChange, showTalentsNeeded, selectedTalentId, requestType }: ServiceDetailsSectionProps) => {
+  const { data: talentServiceListings = [] } = useTalentServiceListings(selectedTalentId || null);
+  const showTalentListings = requestType === "direct" && selectedTalentId;
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold font-display">Service Details</h3>
@@ -88,22 +93,33 @@ const ServiceDetailsSection = ({ formData, onChange, showTalentsNeeded }: Servic
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="serviceListing">Service Listing</Label>
-          <Select
-            value={formData.serviceListing}
-            onValueChange={(value) => onChange("serviceListing", value)}
-          >
-            <SelectTrigger className="bg-background">
-              <SelectValue placeholder="Select listing" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border border-border shadow-lg z-50">
-              <SelectItem value="standard">Standard Service</SelectItem>
-              <SelectItem value="premium">Premium Service</SelectItem>
-              <SelectItem value="custom">Custom Package</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Service Listing - Only for Direct Requests with Talent Selected */}
+        {showTalentListings && (
+          <div className="space-y-2">
+            <Label htmlFor="serviceListing">Service Listing</Label>
+            <Select
+              value={formData.serviceListing}
+              onValueChange={(value) => onChange("serviceListing", value)}
+            >
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder={talentServiceListings.length === 0 ? "No listings available" : "Select listing"} />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                {talentServiceListings.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    This talent has no service listings
+                  </SelectItem>
+                ) : (
+                  talentServiceListings.map((listing) => (
+                    <SelectItem key={listing.id} value={listing.id}>
+                      {listing.name} {listing.price ? `- $${listing.price}` : ""}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="offeredAmount">Offered Amount (USD)</Label>
