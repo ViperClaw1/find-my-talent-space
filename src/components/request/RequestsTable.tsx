@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MapPin, Calendar, DollarSign, Eye, ChevronDown, ChevronUp, Users, Clock } from "lucide-react";
+import { Eye, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useRequestApplications } from "@/hooks/useApplications";
@@ -18,17 +18,12 @@ import { ApplicationsList } from "@/components/request/ApplicationsList";
 import { useTimeSlotReservations } from "@/hooks/useTimeSlotReservations";
 
 const formatDate = (dateString: string | null) => {
-  if (!dateString) return "Flexible";
+  if (!dateString) return "—";
   try {
     return format(new Date(dateString), "MMM d, yyyy");
   } catch {
     return dateString;
   }
-};
-
-const formatTime = (timeString: string | null) => {
-  if (!timeString) return "";
-  return timeString;
 };
 
 const getStatusBadge = (status: string) => {
@@ -59,12 +54,24 @@ export const DirectRequestsTable = ({ requests }: DirectRequestsTableProps) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Service</TableHead>
-            <TableHead>Talent</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Event</TableHead>
+            <TableHead>
+              <div className="flex items-center gap-1">
+                Start date
+                <ArrowUpDown className="w-3 h-3" />
+              </div>
+            </TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Date/Time</TableHead>
-            <TableHead>Budget</TableHead>
+            <TableHead>Service category</TableHead>
+            <TableHead>Service listing</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>
+              <div className="flex items-center gap-1">
+                Payment
+                <ArrowUpDown className="w-3 h-3" />
+              </div>
+            </TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -72,45 +79,35 @@ export const DirectRequestsTable = ({ requests }: DirectRequestsTableProps) => {
           {requests.map((request) => (
             <TableRow key={request.id} className="cursor-pointer hover:bg-muted/50">
               <TableCell>
-                <div>
-                  <p className="font-medium">{request.service_category}</p>
-                  {request.service_type && (
-                    <p className="text-sm text-muted-foreground">{request.service_type}</p>
-                  )}
-                  {request.event_title && (
-                    <p className="text-xs text-muted-foreground">{request.event_title}</p>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
                 <span className="text-sm">{request.talent_name || "—"}</span>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="w-3 h-3" />
-                  <span>{request.is_virtual ? "Virtual" : request.city || "TBD"}</span>
-                </div>
+                <span className="text-sm text-muted-foreground">
+                  {request.event_title || "—"}
+                </span>
               </TableCell>
               <TableCell>
-                <div className="text-sm">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    <span>{formatDate(request.start_date)}</span>
-                  </div>
-                  {request.fixed_start_time && (
-                    <p className="text-xs text-muted-foreground">
-                      {formatTime(request.fixed_start_time)} - {formatTime(request.fixed_end_time)}
-                    </p>
-                  )}
-                </div>
+                <span className="text-sm">{formatDate(request.start_date)}</span>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1 font-medium">
-                  <DollarSign className="w-3 h-3" />
-                  {Number(request.offered_amount).toFixed(0)}
-                </div>
+                <span className="text-sm text-muted-foreground">
+                  {request.is_virtual ? "Virtual" : request.city || "—"}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm font-medium">{request.service_category}</span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-muted-foreground">
+                  {request.service_listing || request.service_type || "—"}
+                </span>
               </TableCell>
               <TableCell>{getStatusBadge(request.status)}</TableCell>
+              <TableCell>
+                <span className="text-sm font-medium">
+                  ${Number(request.offered_amount).toFixed(0)}
+                </span>
+              </TableCell>
               <TableCell className="text-right">
                 <Button
                   variant="ghost"
@@ -142,51 +139,43 @@ const OpenRequestRow = ({ request }: OpenRequestRowProps) => {
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <TableRow className="cursor-pointer hover:bg-muted/50">
         <TableCell>
-          <div>
-            <p className="font-medium">{request.service_category}</p>
-            {request.service_type && (
-              <p className="text-sm text-muted-foreground">{request.service_type}</p>
-            )}
-            {request.event_title && (
-              <p className="text-xs text-muted-foreground">{request.event_title}</p>
-            )}
-          </div>
+          <span className="text-sm">{request.talents_needed || 1} needed</span>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Users className="w-3 h-3" />
-            <span>{request.talents_needed || 1} needed</span>
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {request.event_title || "—"}
+          </span>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="w-3 h-3" />
-            <span>{request.is_virtual ? "Virtual" : request.city || "TBD"}</span>
-          </div>
+          <span className="text-sm">{formatDate(request.start_date)}</span>
         </TableCell>
         <TableCell>
-          <div className="text-sm">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Calendar className="w-3 h-3" />
-              <span>{formatDate(request.start_date)}</span>
-            </div>
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {request.is_virtual ? "Virtual" : request.city || "—"}
+          </span>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1 font-medium">
-            <DollarSign className="w-3 h-3" />
-            {Number(request.offered_amount).toFixed(0)}
-          </div>
+          <span className="text-sm font-medium">{request.service_category}</span>
+        </TableCell>
+        <TableCell>
+          <span className="text-sm text-muted-foreground">
+            {request.service_listing || request.service_type || "—"}
+          </span>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
             {getStatusBadge(request.status)}
             {pendingCount > 0 && (
               <Badge variant="default" className="bg-primary text-xs">
-                {pendingCount} pending
+                {pendingCount}
               </Badge>
             )}
           </div>
+        </TableCell>
+        <TableCell>
+          <span className="text-sm font-medium">
+            ${Number(request.offered_amount).toFixed(0)}
+          </span>
         </TableCell>
         <TableCell className="text-right">
           <div className="flex items-center justify-end gap-1">
@@ -207,7 +196,7 @@ const OpenRequestRow = ({ request }: OpenRequestRowProps) => {
       </TableRow>
       <CollapsibleContent asChild>
         <tr>
-          <td colSpan={7} className="p-0">
+          <td colSpan={9} className="p-0">
             <div className="p-4 bg-muted/30 border-t">
               <ApplicationsList 
                 requestId={request.id} 
@@ -231,12 +220,24 @@ export const OpenRequestsTable = ({ requests }: OpenRequestsTableProps) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Service</TableHead>
-            <TableHead>Talents</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Event</TableHead>
+            <TableHead>
+              <div className="flex items-center gap-1">
+                Start date
+                <ArrowUpDown className="w-3 h-3" />
+              </div>
+            </TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Budget</TableHead>
+            <TableHead>Service category</TableHead>
+            <TableHead>Service listing</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>
+              <div className="flex items-center gap-1">
+                Payment
+                <ArrowUpDown className="w-3 h-3" />
+              </div>
+            </TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -281,57 +282,43 @@ const TimeSlotRequestRow = ({ request }: TimeSlotRequestRowProps) => {
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <TableRow className="cursor-pointer hover:bg-muted/50">
         <TableCell>
-          <div>
-            <p className="font-medium">{request.service_category}</p>
-            {request.service_type && (
-              <p className="text-sm text-muted-foreground">{request.service_type}</p>
-            )}
-            {request.event_title && (
-              <p className="text-xs text-muted-foreground">{request.event_title}</p>
-            )}
-          </div>
+          <span className="text-sm">{slotStats.available}/{slotStats.total} slots</span>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1 text-sm">
-            <Clock className="w-3 h-3 text-muted-foreground" />
-            <span className="font-medium">{slotStats.available}/{slotStats.total}</span>
-            <span className="text-muted-foreground">slots</span>
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {request.event_title || "—"}
+          </span>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="w-3 h-3" />
-            <span>{request.is_virtual ? "Virtual" : request.city || "TBD"}</span>
-          </div>
+          <span className="text-sm">{formatDate(request.start_date)}</span>
         </TableCell>
         <TableCell>
-          <div className="text-sm">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Calendar className="w-3 h-3" />
-              <span>{formatDate(request.start_date)}</span>
-            </div>
-            {request.fixed_start_time && (
-              <p className="text-xs text-muted-foreground">
-                {formatTime(request.fixed_start_time)} - {formatTime(request.fixed_end_time)}
-              </p>
-            )}
-          </div>
+          <span className="text-sm text-muted-foreground">
+            {request.is_virtual ? "Virtual" : request.city || "—"}
+          </span>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1 font-medium">
-            <DollarSign className="w-3 h-3" />
-            {Number(request.offered_amount).toFixed(0)}
-          </div>
+          <span className="text-sm font-medium">{request.service_category}</span>
+        </TableCell>
+        <TableCell>
+          <span className="text-sm text-muted-foreground">
+            {request.service_listing || request.service_type || "—"}
+          </span>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
             {getStatusBadge(request.status)}
             {pendingCount > 0 && (
               <Badge variant="default" className="bg-primary text-xs">
-                {pendingCount} pending
+                {pendingCount}
               </Badge>
             )}
           </div>
+        </TableCell>
+        <TableCell>
+          <span className="text-sm font-medium">
+            ${Number(request.offered_amount).toFixed(0)}
+          </span>
         </TableCell>
         <TableCell className="text-right">
           <div className="flex items-center justify-end gap-1">
@@ -352,7 +339,7 @@ const TimeSlotRequestRow = ({ request }: TimeSlotRequestRowProps) => {
       </TableRow>
       <CollapsibleContent asChild>
         <tr>
-          <td colSpan={7} className="p-0">
+          <td colSpan={9} className="p-0">
             <div className="p-4 bg-muted/30 border-t">
               <ApplicationsList 
                 requestId={request.id} 
@@ -377,12 +364,24 @@ export const TimeSlotRequestsTable = ({ requests }: TimeSlotRequestsTableProps) 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Service</TableHead>
-            <TableHead>Slots</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Event</TableHead>
+            <TableHead>
+              <div className="flex items-center gap-1">
+                Start date
+                <ArrowUpDown className="w-3 h-3" />
+              </div>
+            </TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Date/Time</TableHead>
-            <TableHead>Budget</TableHead>
+            <TableHead>Service category</TableHead>
+            <TableHead>Service listing</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>
+              <div className="flex items-center gap-1">
+                Payment
+                <ArrowUpDown className="w-3 h-3" />
+              </div>
+            </TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
