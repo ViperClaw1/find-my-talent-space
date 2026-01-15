@@ -4,61 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Send, Users, Clock, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, Users, Clock, Loader2 } from "lucide-react";
 import { useRequests } from "@/hooks/useRequests";
 import { useAuth } from "@/hooks/useAuth";
-import { useRequestApplications } from "@/hooks/useApplications";
-import { RequestDetailsCard } from "@/components/request/RequestDetailsCard";
-import { TimeSlotRequestCard } from "@/components/request/TimeSlotRequestCard";
-import { ApplicationsList } from "@/components/request/ApplicationsList";
-
-interface OpenRequestCardProps {
-  request: any;
-}
-
-const OpenRequestCard = ({ request }: OpenRequestCardProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { data: applications = [] } = useRequestApplications(request.id);
-  const pendingCount = applications.filter(a => a.status === "pending").length;
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <RequestDetailsCard request={request}>
-        <div className="flex items-center gap-2 mb-4">
-          {pendingCount > 0 && (
-            <Badge variant="default" className="bg-primary">
-              {pendingCount} pending application(s)
-            </Badge>
-          )}
-        </div>
-
-        <CollapsibleTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full">
-            {isOpen ? (
-              <>
-                <ChevronUp className="w-4 h-4 mr-2" />
-                Hide Applications
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4 mr-2" />
-                View Applications ({applications.length})
-              </>
-            )}
-          </Button>
-        </CollapsibleTrigger>
-
-        <CollapsibleContent className="mt-4">
-          <ApplicationsList 
-            requestId={request.id} 
-            offeredAmount={Number(request.offered_amount)} 
-          />
-        </CollapsibleContent>
-      </RequestDetailsCard>
-    </Collapsible>
-  );
-};
+import { DirectRequestsTable, OpenRequestsTable, TimeSlotRequestsTable } from "@/components/request/RequestsTable";
 
 const MyRequests = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("client");
@@ -94,7 +43,7 @@ const MyRequests = () => {
       selectedTalentId={selectedTalentId}
       onSelectTalent={setSelectedTalentId}
     >
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold font-display">My Requests</h1>
           <p className="text-muted-foreground">Manage and track all your requests</p>
@@ -136,7 +85,7 @@ const MyRequests = () => {
             </TabsList>
 
             {/* Direct Requests Tab */}
-            <TabsContent value="direct" className="space-y-4">
+            <TabsContent value="direct">
               {loadingDirect ? (
                 renderLoading()
               ) : directRequests.length === 0 ? (
@@ -145,14 +94,12 @@ const MyRequests = () => {
                   "No direct requests yet"
                 )
               ) : (
-                directRequests.map((request) => (
-                  <RequestDetailsCard key={request.id} request={request} />
-                ))
+                <DirectRequestsTable requests={directRequests} />
               )}
             </TabsContent>
 
             {/* Open Requests Tab */}
-            <TabsContent value="open" className="space-y-4">
+            <TabsContent value="open">
               {loadingOpen ? (
                 renderLoading()
               ) : openRequests.length === 0 ? (
@@ -161,14 +108,12 @@ const MyRequests = () => {
                   "No open requests yet"
                 )
               ) : (
-                openRequests.map((request) => (
-                  <OpenRequestCard key={request.id} request={request} />
-                ))
+                <OpenRequestsTable requests={openRequests} />
               )}
             </TabsContent>
 
             {/* Time-Slot Requests Tab */}
-            <TabsContent value="time-slot" className="space-y-4">
+            <TabsContent value="time-slot">
               {loadingTimeSlot ? (
                 renderLoading()
               ) : timeSlotRequests.length === 0 ? (
@@ -177,9 +122,7 @@ const MyRequests = () => {
                   "No time-slot requests yet"
                 )
               ) : (
-                timeSlotRequests.map((request) => (
-                  <TimeSlotRequestCard key={request.id} request={request} />
-                ))
+                <TimeSlotRequestsTable requests={timeSlotRequests} />
               )}
             </TabsContent>
           </Tabs>
