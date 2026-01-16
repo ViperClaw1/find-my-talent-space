@@ -1,9 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DollarSign, Calendar, MapPin, User, Clock, Eye, MoreHorizontal, Tag, Briefcase } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  DollarSign, 
+  Calendar, 
+  MapPin, 
+  User, 
+  Clock, 
+  Eye, 
+  MoreHorizontal,
+  Tag,
+  Briefcase
+} from "lucide-react";
 import { format } from "date-fns";
+
 interface RequestDetailsCardProps {
   request: {
     id: string;
@@ -27,6 +43,7 @@ interface RequestDetailsCardProps {
   };
   children?: React.ReactNode;
 }
+
 const getStatusBadge = (status: string) => {
   const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     pending: "secondary",
@@ -34,12 +51,16 @@ const getStatusBadge = (status: string) => {
     active: "default",
     completed: "outline",
     cancelled: "destructive",
-    declined: "destructive"
+    declined: "destructive",
   };
-  return <Badge variant={variants[status] || "secondary"} className="capitalize">
+
+  return (
+    <Badge variant={variants[status] || "secondary"} className="capitalize">
       {status}
-    </Badge>;
+    </Badge>
+  );
 };
+
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return null;
   try {
@@ -48,10 +69,12 @@ const formatDate = (dateString: string | null | undefined) => {
     return dateString;
   }
 };
+
 const formatTime = (timeString: string | null | undefined) => {
   if (!timeString) return null;
   return timeString;
 };
+
 const getLocationDisplay = (request: RequestDetailsCardProps["request"]) => {
   if (request.is_virtual) return "Virtual";
   if (request.venue_tbd) return "Venue TBD";
@@ -60,14 +83,13 @@ const getLocationDisplay = (request: RequestDetailsCardProps["request"]) => {
   if (request.location_name) return request.location_name;
   return "Location TBD";
 };
-export const RequestDetailsCard = ({
-  request,
-  children
-}: RequestDetailsCardProps) => {
+
+export const RequestDetailsCard = ({ request, children }: RequestDetailsCardProps) => {
   const startDate = formatDate(request.start_date);
   const endDate = formatDate(request.end_date);
   const startTime = formatTime(request.fixed_start_time);
   const endTime = formatTime(request.fixed_end_time);
+
   const dateTimeDisplay = () => {
     const parts: string[] = [];
     if (startDate) {
@@ -83,18 +105,25 @@ export const RequestDetailsCard = ({
     }
     return parts.length > 0 ? parts.join(" | ") : "Date/Time TBD";
   };
-  return <Card>
+
+  return (
+    <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <CardTitle className="text-lg">{request.service_category}</CardTitle>
-            {request.service_type && <span className="text-sm text-muted-foreground">• {request.service_type}</span>}
+            {request.event_title && (
+              <CardTitle className="text-lg">{request.event_title}</CardTitle>
+            )}
+            {!request.event_title && (
+              <CardTitle className="text-lg">{request.service_category}</CardTitle>
+            )}
           </div>
-          {request.event_title && <p className="text-sm text-muted-foreground my-[10px]">{request.event_title}</p>}
-          {request.talent_name && <p className="text-sm text-muted-foreground flex items-center gap-1">
+          {request.talent_name && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
               <User className="w-3 h-3" />
               {request.talent_name}
-            </p>}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(request.status)}
@@ -125,10 +154,12 @@ export const RequestDetailsCard = ({
           </div>
 
           {/* Service Type */}
-          {request.service_type && <div className="flex items-center gap-2">
+          {request.service_type && (
+            <div className="flex items-center gap-2">
               <Briefcase className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{request.service_type}</span>
-            </div>}
+            </div>
+          )}
 
           {/* Budget */}
           <div className="flex items-center gap-2">
@@ -149,13 +180,16 @@ export const RequestDetailsCard = ({
           </div>
 
           {/* Talents Needed (for open/time-slot) */}
-          {request.talents_needed !== undefined && request.talents_needed !== null && <div className="flex items-center gap-2">
+          {request.talents_needed !== undefined && request.talents_needed !== null && (
+            <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span>{request.talents_needed} talent(s) needed</span>
-            </div>}
+            </div>
+          )}
         </div>
 
         {children}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };

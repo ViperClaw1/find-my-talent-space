@@ -1,15 +1,42 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Clock, Loader2, FileText } from "lucide-react";
+import { Users, Clock, MapPin, Calendar, DollarSign, Loader2, FileText, CreditCard } from "lucide-react";
 import { useMyApplications } from "@/hooks/useApplications";
 import { useTalent } from "@/hooks/useTalents";
 import { useAuth } from "@/hooks/useAuth";
+import { format } from "date-fns";
 import { PayToConfirmDialog } from "@/components/application/PayToConfirmDialog";
-import { ApplicationsTable } from "@/components/application/ApplicationsTable";
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return "Flexible";
+  try {
+    return format(new Date(dateString), "MMM d, yyyy");
+  } catch {
+    return dateString;
+  }
+};
+
+const getStatusBadge = (status: string) => {
+  const variants: Record<string, { className: string; label: string }> = {
+    pending: { className: "bg-amber-100 text-amber-700", label: "Pending" },
+    approved: { className: "bg-blue-100 text-blue-700", label: "Approved - Pay to Confirm" },
+    accepted: { className: "bg-green-100 text-green-700", label: "Confirmed" },
+    rejected: { className: "bg-red-100 text-red-700", label: "Rejected" },
+  };
+
+  const config = variants[status] || { className: "", label: status };
+
+  return (
+    <Badge className={`capitalize ${config.className}`}>
+      {config.label}
+    </Badge>
+  );
+};
 
 // Extract tier_id and slot_index from message
 const extractSlotInfo = (message: string | null) => {
@@ -28,6 +55,80 @@ const extractSlotInfo = (message: string | null) => {
   const tierId = tierMatch ? tierMatch[0] : null;
   
   return { tierId, slotIndex, selectedSlot };
+};
+
+interface ApplicationCardProps {
+  application: any;
+  onPayToConfirm?: (application: any) => void;
+}
+
+const ApplicationCard = ({ application, onPayToConfirm }: ApplicationCardProps) => {
+  const request = application.requests;
+  
+  if (!request) return null;
+
+  const isApproved = application.status === "approved";
+  const { selectedSlot } = extractSlotInfo(application.message);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle className="text-lg">
+              {request.event_title || request.service_category}
+            </CardTitle>
+            <CardDescription>{request.service_category}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {getStatusBadge(application.status)}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              <span>${Number(request.offered_amount).toFixed(0)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              <span>{request.city || "Location TBD"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(request.start_date)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>Applied {formatDate(application.created_at)}</span>
+            </div>
+          </div>
+          
+          {application.message && (
+            <div className="bg-muted/50 rounded-lg p-3 mt-2 mb-3">
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">Your message:</span> {application.message}
+              </p>
+            </div>
+          )}
+
+          {isApproved && onPayToConfirm && (
+            <Button 
+              onClick={() => onPayToConfirm(application)}
+              className="w-full"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Pay to Confirm
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
 };
 
 const MyApplications = () => {
@@ -73,7 +174,7 @@ const MyApplications = () => {
       selectedTalentId={selectedTalentId}
       onSelectTalent={setSelectedTalentId}
     >
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold font-display">My Applications</h1>
           <p className="text-muted-foreground">
@@ -116,7 +217,7 @@ const MyApplications = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="open">
+            <TabsContent value="open" className="space-y-4">
               {loadingOpen ? (
                 renderLoading()
               ) : openApplications.length === 0 ? (
@@ -125,14 +226,17 @@ const MyApplications = () => {
                   "No open request applications yet"
                 )
               ) : (
-                <ApplicationsTable 
-                  applications={openApplications}
-                  onPayToConfirm={handlePayToConfirm}
-                />
+                openApplications.map((application) => (
+                  <ApplicationCard 
+                    key={application.id} 
+                    application={application}
+                    onPayToConfirm={handlePayToConfirm}
+                  />
+                ))
               )}
             </TabsContent>
 
-            <TabsContent value="time-slot">
+            <TabsContent value="time-slot" className="space-y-4">
               {loadingTimeSlot ? (
                 renderLoading()
               ) : timeSlotApplications.length === 0 ? (
@@ -141,10 +245,13 @@ const MyApplications = () => {
                   "No time-slot request applications yet"
                 )
               ) : (
-                <ApplicationsTable 
-                  applications={timeSlotApplications}
-                  onPayToConfirm={handlePayToConfirm}
-                />
+                timeSlotApplications.map((application) => (
+                  <ApplicationCard 
+                    key={application.id} 
+                    application={application}
+                    onPayToConfirm={handlePayToConfirm}
+                  />
+                ))
               )}
             </TabsContent>
           </Tabs>

@@ -1,15 +1,158 @@
 import { useState } from "react";
-import { Search, Filter, Users, Clock, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search, Filter, MapPin, Calendar, DollarSign, Users, Clock, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useOpenRequests, useTimeSlotRequests } from "@/hooks/useApplications";
-import { useTalent } from "@/hooks/useTalents";
+import { useOpenRequests, useTimeSlotRequests, useHasApplied } from "@/hooks/useApplications";
+import { useMyTalentProfiles, useTalent } from "@/hooks/useTalents";
 import { ApplyDialog } from "@/components/opportunity/ApplyDialog";
 import { TimeSlotApplyDialog } from "@/components/opportunity/TimeSlotApplyDialog";
-import { OpenOpportunitiesTable, TimeSlotOpportunitiesTable } from "@/components/opportunity/OpportunitiesTable";
+import { format } from "date-fns";
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return "Flexible";
+  try {
+    return format(new Date(dateString), "MMM d, yyyy");
+  } catch {
+    return dateString;
+  }
+};
+
+interface OpportunityCardProps {
+  request: any;
+  onApply: () => void;
+  selectedTalentId: string | null;
+}
+
+const OpenOpportunityCard = ({ request, onApply, selectedTalentId }: OpportunityCardProps) => {
+  const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <Badge className="bg-amber-100 text-amber-700">
+          Open Request
+        </Badge>
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">Budget</p>
+          <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
+        </div>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-2">{request.event_title || request.service_category}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{request.service_category}</p>
+
+      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4" />
+          <span>{request.is_virtual ? "Virtual" : request.city || "Location TBD"}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="w-4 h-4" />
+          <span>{formatDate(request.start_date)}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Users className="w-4 h-4" />
+          <span>{request.talents_needed || 1} talent(s) needed</span>
+        </div>
+      </div>
+
+      {request.special_notes && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{request.special_notes}</p>
+      )}
+
+      <Button
+        className="w-full"
+        onClick={onApply}
+        disabled={!selectedTalentId || hasApplied}
+        variant={hasApplied ? "outline" : "default"}
+      >
+        {!selectedTalentId ? "Select a talent profile to apply" : hasApplied ? "Already Applied" : "Apply Now"}
+      </Button>
+    </motion.div>
+  );
+};
+
+interface TimeSlotOpportunityCardProps {
+  request: any;
+  onApply: () => void;
+  selectedTalentId: string | null;
+}
+
+const TimeSlotOpportunityCard = ({ request, onApply, selectedTalentId }: TimeSlotOpportunityCardProps) => {
+  const { data: hasApplied = false } = useHasApplied(request.id, selectedTalentId);
+  const isReserveMode = request.booking_mode === "reserve";
+
+  const getButtonText = () => {
+    if (!selectedTalentId) return "Select a talent profile";
+    if (hasApplied) return isReserveMode ? "Already Reserved" : "Already Applied";
+    return isReserveMode ? "Reserve Now" : "Apply Now";
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="glass-card rounded-2xl p-6 hover:border-primary/30 transition-all"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex gap-2">
+          <Badge className="bg-purple-100 text-purple-700">
+            Time Slot
+          </Badge>
+          <Badge variant="outline" className="capitalize">
+            {isReserveMode ? "Instant" : "Approval"}
+          </Badge>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">Budget</p>
+          <p className="font-bold text-lg">${Number(request.offered_amount).toFixed(0)}</p>
+        </div>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-2">{request.event_title || request.service_category}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{request.service_category}</p>
+
+      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4" />
+          <span>{request.is_virtual ? "Virtual" : request.city || "Location TBD"}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="w-4 h-4" />
+          <span>{formatDate(request.start_date)}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock className="w-4 h-4" />
+          <span>{request.time_type === "tier" ? "Custom Tiers" : `${request.fixed_slots || 0} slots`}</span>
+        </div>
+      </div>
+
+      {request.special_notes && (
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{request.special_notes}</p>
+      )}
+
+      <Button
+        className="w-full"
+        onClick={onApply}
+        disabled={!selectedTalentId || hasApplied}
+        variant={hasApplied ? "outline" : isReserveMode ? "hero" : "default"}
+      >
+        {getButtonText()}
+      </Button>
+    </motion.div>
+  );
+};
 
 const BrowseOpportunities = () => {
   const [userRole, setUserRole] = useState<"client" | "talent">("talent");
@@ -22,6 +165,7 @@ const BrowseOpportunities = () => {
 
   // Get selected talent's category to filter opportunities
   const { data: selectedTalent } = useTalent(selectedTalentId);
+  const talentCategory = selectedTalent?.category || null;
 
   const { data: openRequests = [], isLoading: loadingOpen } = useOpenRequests();
   const { data: timeSlotRequests = [], isLoading: loadingTimeSlot } = useTimeSlotRequests();
@@ -69,7 +213,7 @@ const BrowseOpportunities = () => {
       selectedTalentId={selectedTalentId}
       onSelectTalent={setSelectedTalentId}
     >
-      <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold font-display mb-2">Browse Opportunities</h1>
@@ -127,11 +271,16 @@ const BrowseOpportunities = () => {
             ) : filteredOpenRequests.length === 0 ? (
               renderEmpty("No open requests available")
             ) : (
-              <OpenOpportunitiesTable
-                requests={filteredOpenRequests}
-                selectedTalentId={selectedTalentId}
-                onApply={handleApplyOpen}
-              />
+              <div className="grid md:grid-cols-2 gap-6">
+                {filteredOpenRequests.map((request) => (
+                  <OpenOpportunityCard
+                    key={request.id}
+                    request={request}
+                    onApply={() => handleApplyOpen(request)}
+                    selectedTalentId={selectedTalentId}
+                  />
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -141,11 +290,16 @@ const BrowseOpportunities = () => {
             ) : filteredTimeSlotRequests.length === 0 ? (
               renderEmpty("No time-slot requests available")
             ) : (
-              <TimeSlotOpportunitiesTable
-                requests={filteredTimeSlotRequests}
-                selectedTalentId={selectedTalentId}
-                onApply={handleApplyTimeSlot}
-              />
+              <div className="grid md:grid-cols-2 gap-6">
+                {filteredTimeSlotRequests.map((request) => (
+                  <TimeSlotOpportunityCard
+                    key={request.id}
+                    request={request}
+                    onApply={() => handleApplyTimeSlot(request)}
+                    selectedTalentId={selectedTalentId}
+                  />
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>
